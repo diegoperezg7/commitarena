@@ -161,7 +161,6 @@ flowchart LR
 | `run --price MODEL=IN,OUT` | built-in | USD per million tokens for models without a known price. |
 | `run --context-file F` | | Inject an AGENTS.md / CLAUDE.md: `--context-mode both\|repo\|prompt`. |
 | `run --strip-context-files` | off | Remove the repo's own AGENTS.md / CLAUDE.md before the attempt. |
-| `run --think` / `--no-think` | model default | Ollama only: turn reasoning on or off for models like qwen3. |
 | `run --cpus` / `--memory` / `--command-timeout` | `2` / `2g` / `120` | Sandbox limits. |
 | `mine --since` / `--until` / `--scan` / `--max-tasks` | | Which commits to consider. |
 | `mine --python` / `--setup` | `3.12` / `pip install -e .` | How the test image is built. |
@@ -172,15 +171,19 @@ no telemetry.
 
 **Ollama context window.** Ollama's OpenAI-compatible endpoint ignores `num_ctx`, and its default
 window can be 4096 tokens, which silently drops the task text and gives worse results. commitarena warns
-about it. Use a variant with `num_ctx 16384` (this is the one used in development, `qwen3:4b-16k`); the
-agent loop elides older tool outputs to stay inside 16K. For reasoning models, `--no-think` asks Ollama to
-skip thinking: with thinking on, qwen3:4b spent its whole 4096-token reply on reasoning and never called
-the tool in our tests.
+about it. Use a variant with `num_ctx 16384` (the one used in development is `qwen3:4b-16k`); the agent
+loop elides older tool outputs to stay inside 16K.
 
 ```bash
 printf 'FROM qwen3:4b\nPARAMETER num_ctx 16384\n' > Modelfile && ollama create qwen3:4b-16k -f Modelfile
-commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k --no-think
+commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k
 ```
+
+Local models go through exactly the same code path (qwen3:4b-16k was run during development), but it is not
+in the recorded demo. On this machine it spent every 4096-token reply reasoning and never called the
+tool, and its thinking could not be turned off through the OpenAI endpoint (`think: false`,
+`reasoning_effort: "none"` and `/no_think` were all tried). Raising the reply limit for one model would
+break the same-harness rule, so it was left out rather than shown with a misleading 0.
 
 ## Python API
 

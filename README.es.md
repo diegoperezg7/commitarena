@@ -163,7 +163,6 @@ flowchart LR
 | `run --price MODELO=IN,OUT` | integrado | USD por millón de tokens para modelos sin precio conocido. |
 | `run --context-file F` | | Inyecta un AGENTS.md / CLAUDE.md: `--context-mode both\|repo\|prompt`. |
 | `run --strip-context-files` | no | Quita el AGENTS.md / CLAUDE.md propio del repo antes del intento. |
-| `run --think` / `--no-think` | lo que haga el modelo | Solo Ollama: activa o desactiva el razonamiento en modelos como qwen3. |
 | `run --cpus` / `--memory` / `--command-timeout` | `2` / `2g` / `120` | Límites del sandbox. |
 | `mine --since` / `--until` / `--scan` / `--max-tasks` | | Qué commits se miran. |
 | `mine --python` / `--setup` | `3.12` / `pip install -e .` | Cómo se construye la imagen de tests. |
@@ -174,15 +173,19 @@ telemetría.
 
 **Ventana de contexto en Ollama.** El endpoint compatible con OpenAI de Ollama ignora `num_ctx`, y la
 ventana por defecto puede ser de 4096 tokens, lo que tira el texto de la tarea sin avisar y da peores
-resultados. commitarena avisa. Usa una variante con `num_ctx 16384` (la usada en el desarrollo,
-`qwen3:4b-16k`); el bucle del agente elide las salidas más antiguas para caber en 16K. En modelos de
-razonamiento, `--no-think` le pide a Ollama que no piense: con el thinking activo, qwen3:4b gastó los 4096
-tokens de cada respuesta razonando y nunca llamó a la herramienta en nuestras pruebas.
+resultados. commitarena avisa. Usa una variante con `num_ctx 16384` (la usada en el desarrollo es
+`qwen3:4b-16k`); el bucle del agente elide las salidas más antiguas para caber en 16K.
 
 ```bash
 printf 'FROM qwen3:4b\nPARAMETER num_ctx 16384\n' > Modelfile && ollama create qwen3:4b-16k -f Modelfile
-commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k --no-think
+commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k
 ```
+
+Los modelos locales pasan exactamente por el mismo código (qwen3:4b-16k se ejecutó durante el desarrollo),
+pero no está en la demo grabada. En esta máquina gastaba los 4096 tokens de cada respuesta
+razonando y nunca llamaba a la herramienta, y no hubo forma de desactivar el razonamiento por el endpoint
+de OpenAI (se probaron `think: false`, `reasoning_effort: "none"` y `/no_think`). Subir el límite solo para
+un modelo rompería la regla de arnés único, así que se dejó fuera en vez de mostrar un 0 engañoso.
 
 ## API de Python
 

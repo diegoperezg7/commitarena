@@ -17,6 +17,6 @@ First release.
   and Codestral, no keys or Docker needed.
 - Agent loop details: older tool outputs are elided to fit a 16K window, exact repeated commands get a
   notice, truncated outputs say how to read specific lines, commands with a null byte are a failed step,
-  empty or cut-off replies get up to two nudges, `--no-think` for Ollama reasoning models.
+  empty or cut-off replies get up to two nudges.
 - Python API (`run_task`, `load_tasks`, `ContextFile`, ...) with context-file injection for AGENTS.md /
   CLAUDE.md experiments.

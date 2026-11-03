@@ -52,8 +52,6 @@ class AgentConfig:
     # Older tool outputs are elided once the conversation passes this size, so a 16K-token local
     # model keeps the task text and the latest outputs (about 3.5 characters per token).
     max_context_chars: int = 40000
-    # think=False asks Ollama reasoning models (qwen3, ...) not to think. Hosted models ignore it.
-    think: bool | None = None
 
 
 @dataclass
@@ -157,11 +155,6 @@ def run_agent(
                 temperature=cfg.temperature,
                 top_p=1.0,
                 max_tokens=cfg.max_tokens,
-                **(
-                    {"extra_body": {"think": cfg.think}}
-                    if cfg.think is not None and client.model.is_local
-                    else {}
-                ),
             )
         except BudgetExceeded as e:
             out.stop_reason, out.error = "budget_exceeded", str(e)

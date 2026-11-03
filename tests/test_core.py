@@ -280,14 +280,3 @@ def test_repeated_command_gets_a_note_and_context_is_trimmed(scripted):
     assert sum(len(m["content"]) for m in fitted) <= 5000
     assert fitted[1]["content"] == "task" and fitted[-1]["content"] == "x" * 1000
     assert ELIDED in fitted[2]["content"] and msgs[2]["content"] == "x" * 1000  # original untouched
-
-
-def test_think_flag_only_sent_to_local_models(scripted):
-    c = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
-    c._client = scripted([fake_response("done")])
-    run_agent(c, FakeSandbox(), "x", AgentConfig(think=False))
-    assert c._client.calls[0]["extra_body"] == {"think": False}
-    c2 = ChatClient(ModelSpec.parse("mistral/codestral-latest"), Budget())
-    c2._client = scripted([fake_response("done")])
-    run_agent(c2, FakeSandbox(), "x", AgentConfig(think=False))
-    assert "extra_body" not in c2._client.calls[0]
