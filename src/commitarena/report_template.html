@@ -70,7 +70,8 @@ h2 { font-size: 1.05rem; margin: 0 0 4px; letter-spacing: -.01em; }
 table { border-collapse: collapse; width: 100%; font-size: .88rem; }
 th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 th { color: var(--muted); font-weight: 500; font-size: .78rem; }
-td.num, th.num { text-align: right; font-family: var(--mono); font-size: .82rem; }
+td.num, th.num { text-align: right; }
+td.num { font-family: var(--mono); font-size: .82rem; }
 tr:last-child td { border-bottom: 0; }
 .rank { color: var(--muted); font-family: var(--mono); }
 .model { font-family: var(--mono); font-size: .82rem; }
@@ -239,6 +240,8 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
   };
   var lang = "en";
   try { lang = localStorage.getItem("ca-lang") || ((navigator.language || "").slice(0, 2) === "es" ? "es" : "en"); } catch (e) {}
+  var qs = new URLSearchParams(location.search);
+  if (qs.get("lang")) lang = qs.get("lang");
   if (!T[lang]) lang = "en";
   function t(k) { return T[lang][k] || k; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
@@ -256,6 +259,7 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
   var root = document.documentElement;
   function curTheme() { var a = root.getAttribute("data-theme"); if (a) return a; return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
   try { var st = localStorage.getItem("ca-theme"); if (st) root.setAttribute("data-theme", st); } catch (e) {}
+  if (qs.get("theme") === "dark" || qs.get("theme") === "light") root.setAttribute("data-theme", qs.get("theme"));
   var themeBtn = document.getElementById("theme");
   function themeLabel() { themeBtn.textContent = curTheme() === "dark" ? (lang === "es" ? "Claro" : "Light") : (lang === "es" ? "Oscuro" : "Dark"); }
   themeBtn.onclick = function () { var n = curTheme() === "dark" ? "light" : "dark"; root.setAttribute("data-theme", n); try { localStorage.setItem("ca-theme", n); } catch (e) {} themeLabel(); };

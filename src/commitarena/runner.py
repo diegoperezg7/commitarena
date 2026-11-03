@@ -23,9 +23,13 @@ from .tasks import (
     Task,
     changed_files,
     extract_commit,
+    init_workspace_git,
     is_test_path,
+    load_tasks,
     resolve_repo,
+    save_tasks,
     unified_diff,
+    write_files,
 )
 from .testrun import run_tests
 
@@ -143,8 +147,6 @@ def run_task(
     try:
         pristine = tmp / "pristine"
         extract_commit(resolve_repo(task.repo), task.parent, pristine)
-        from .tasks import write_files
-
         write_files(pristine, task.test_files)
         if strip_context_files:
             for n in CONTEXT_NAMES:
@@ -157,8 +159,6 @@ def run_task(
                 system_extra = f"# Project instructions ({context.name})\n\n{context.content}"
         workspace = tmp / "workspace"
         shutil.copytree(pristine, workspace)
-        from .tasks import init_workspace_git
-
         init_workspace_git(workspace)
         agent_tree = tmp / "agent"
         with Sandbox(task.image, sb_cfg) as sb:
@@ -262,11 +262,7 @@ def run_suite(
     meta_path.write_text(json.dumps(meta, indent=1))
     tasks_by_id = {t.id: t for t in tasks}
     existing_tasks = out_dir / "tasks.json"
-    from .tasks import save_tasks
-
     if existing_tasks.exists():
-        from .tasks import load_tasks
-
         for t in load_tasks(existing_tasks):
             tasks_by_id.setdefault(t.id, t)
     save_tasks(existing_tasks, list(tasks_by_id.values()))

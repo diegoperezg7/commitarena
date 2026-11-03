@@ -35,6 +35,8 @@ PRICES: dict[str, tuple[float, float]] = {
     "mistral/codestral-2508": (0.30, 0.90),
     "mistral/mistral-small-latest": (0.15, 0.60),
     "mistral/mistral-small-2603": (0.15, 0.60),
+    "mistral/mistral-large-4": (0.70, 2.10),
+    "mistral/mistral-large-4-0": (0.70, 2.10),
 }
 
 
@@ -112,6 +114,7 @@ class ChatClient:
     max_retries: int = 8
     timeout: float = 600.0
     _client: Any = None
+    _connected: bool = False  # a local server that answered once gets retries on later drops
 
     def __post_init__(self) -> None:
         if self.model.unit_price() is None and self.model.provider != "openrouter":
@@ -127,6 +130,7 @@ class ChatClient:
             base, env = PROVIDERS[self.model.provider]
             if self.model.provider == "ollama":
                 base, key = _ollama_base(), "ollama"
+                self.timeout = max(self.timeout, 1800.0)  # a busy local server can be slow
             else:
                 key = os.environ.get(env or "", "")
                 if not key:
@@ -148,6 +152,7 @@ class ChatClient:
                 resp = client.chat.completions.create(
                     model=self.model.name, messages=messages, tools=tools, **extra, **kw
                 )
+                self._connected = True
                 break
             except openai.AuthenticationError as e:
                 _, env = PROVIDERS[self.model.provider]
@@ -162,7 +167,7 @@ class ChatClient:
                 )
                 raise ModelUnavailable(f"Model '{self.model.id}' was not found.{hint}") from e
             except openai.APIConnectionError as e:
-                if self.model.is_local:
+                if self.model.is_local and (attempt >= 3 or not self._connected):
                     raise ModelUnavailable(
                         f"Cannot reach Ollama at {_ollama_base()}. Start it with 'ollama serve' "
                         f"or set OLLAMA_HOST."
