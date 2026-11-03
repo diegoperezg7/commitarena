@@ -45,7 +45,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 28px; min-width: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 header.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
 .brand svg { width: 32px; height: 32px; }
@@ -74,7 +74,7 @@ td.num, th.num { text-align: right; }
 td.num { font-family: var(--mono); font-size: .82rem; }
 tr:last-child td { border-bottom: 0; }
 .rank { color: var(--muted); font-family: var(--mono); }
-td.stops { color: var(--muted); font-size: .8rem; }
+td.stops { color: var(--muted); font-size: .8rem; white-space: normal; min-width: 130px; max-width: 190px; }
 .model { font-family: var(--mono); font-size: .82rem; }
 .rate { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
 .meter { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }

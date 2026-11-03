@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "commitarena"
-version = "0.1.0"
+version = "0.1.1"
 description = "Your git history is the benchmark. Replay real bug fixes against any model, in a sandbox with no network."
 readme = "README.md"
 license = "MIT"

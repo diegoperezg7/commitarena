@@ -1,6 +1,6 @@
 """commitarena: replay real bug fixes from git history against any model, in a sandbox with no network."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from .agent import SYSTEM_PROMPT, AgentConfig  # noqa: E402
 from .errors import (  # noqa: E402

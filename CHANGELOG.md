@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 - 2026-11-03
+
+- Report: the leaderboard fits at 1280 px (the "Ended by" column wraps instead of pushing "Cutoff" out of the
+  card), and the page no longer overflows horizontally at 390 px; wide tables scroll inside their card.
+
 ## 0.1.0 - 2026-11-03
 
 First release.

@@ -21,7 +21,7 @@ def _main(args, monkeypatch, capsys):
 
 def test_version():
     r = runner.invoke(app, ["--version"])
-    assert r.exit_code == 0 and "0.1.0" in r.stdout
+    assert r.exit_code == 0 and "0.1.1" in r.stdout
 
 
 def test_demo_works_offline(tmp_path):

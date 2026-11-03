@@ -47,7 +47,7 @@ Three things commitarena does on purpose:
 The demo needs no API keys and no Docker. It prints a recorded run and writes the HTML report.
 
 ```bash
-uvx --from git+https://github.com/diegoperezg7/commitarena@v0.1.0 commitarena demo
+uvx --from git+https://github.com/diegoperezg7/commitarena@v0.1.1 commitarena demo
 ```
 
 Or from a clone:
