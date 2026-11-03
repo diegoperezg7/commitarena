@@ -202,7 +202,8 @@ print(res.passed, res.cost_usd, res.tokens_in, res.steps, res.wall_time_s)
 
 La demo grabada usa 11 tareas minadas de [sqlparse](https://github.com/andialbrecht/sqlparse)
 (BSD-3-Clause, Copyright (c) 2016, Andi Albrecht). Los ficheros incluidos contienen los tests que fallan,
-los diffs de los tests y los fixes originales como diffs, cada uno enlazado a su commit.
+los diffs de los tests y los fixes originales como diffs, cada uno enlazado a su commit. La licencia original va incluida literal en
+[src/commitarena/demo/LICENSE-sqlparse](src/commitarena/demo/LICENSE-sqlparse).
 
 ## Hoja de ruta
 

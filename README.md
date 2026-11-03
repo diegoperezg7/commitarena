@@ -200,7 +200,8 @@ print(res.passed, res.cost_usd, res.tokens_in, res.steps, res.wall_time_s)
 
 The recorded demo uses 11 tasks mined from [sqlparse](https://github.com/andialbrecht/sqlparse)
 (BSD-3-Clause, Copyright (c) 2016, Andi Albrecht). The bundled files contain the failing tests, the test
-diffs and the upstream fixes as diffs, each linked to its commit.
+diffs and the upstream fixes as diffs, each linked to its commit. The upstream license is bundled verbatim in
+[src/commitarena/demo/LICENSE-sqlparse](src/commitarena/demo/LICENSE-sqlparse).
 
 ## Roadmap
 
