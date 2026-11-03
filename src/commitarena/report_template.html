@@ -95,7 +95,7 @@ tr:last-child td { border-bottom: 0; }
 .bar[data-tip] { cursor: default; }
 /* matrix */
 .matrix td.task { font-family: var(--mono); font-size: .8rem; }
-.matrix td.task small { display: block; font-family: var(--sans); color: var(--muted); }
+.matrix td.task small { display: block; font-family: var(--sans); color: var(--muted); white-space: normal; max-width: 260px; overflow-wrap: anywhere; }
 .cell { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 64px; padding: 4px 8px;
   border-radius: 7px; font: 600 .74rem var(--sans); border: 1px solid transparent; cursor: pointer; background: none; color: inherit; }
 .cell.pass { color: var(--ok); background: var(--ok-soft); }
@@ -125,6 +125,11 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .diffs { grid-template-columns: minmax(0, 1fr); }
   .cgroup { grid-template-columns: minmax(0, 1fr); }
+  .matrix .mdate { display: none; }
+  .matrix td.task small { max-width: 120px; }
+  .matrix th, .matrix td { padding: 8px 6px; }
+  .cell { min-width: 0; padding: 4px 6px; }
+  .cell .ct { display: none; }
   h1 { font-size: 1.3rem; }
   .card { padding: 14px; }
 }
@@ -319,11 +324,11 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
     });
     document.getElementById("cut").innerHTML = c;
 
-    var mx = "<thead><tr><th>" + t("task") + "</th><th>" + t("date") + "</th>";
-    D.models.forEach(function (mm) { mx += "<th>" + esc(mm) + "</th>"; });
+    var mx = "<thead><tr><th>" + t("task") + '</th><th class="mdate">' + t("date") + "</th>";
+    D.models.forEach(function (mm) { mx += '<th title="' + esc(mm) + '">' + esc(mm.split("/").slice(1).join("/") || mm) + "</th>"; });
     mx += "</tr></thead><tbody>";
     D.tasks.forEach(function (tk) {
-      mx += '<tr><td class="task">' + esc(short(tk.id)) + "<small>" + esc((tk.files || []).join(", ")) + "</small></td><td>" + esc(tk.date.slice(0, 10)) + "</td>";
+      mx += '<tr><td class="task">' + esc(short(tk.id)) + "<small>" + esc((tk.files || []).join(", ")) + "</small></td><td class=\"mdate\">" + esc(tk.date.slice(0, 10)) + "</td>";
       D.models.forEach(function (mm) {
         var r = R[tk.id + "|" + mm];
         var cut = D.cutoffs[mm];
@@ -332,7 +337,7 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
         if (!r) { mx += "<td>" + dot + '<span class="empty">-</span></td>'; return; }
         var tipTxt = "<b>" + esc(r.passed ? t("ok") : t("fail")) + "</b> · " + r.fail_to_pass_passed + "/" + r.fail_to_pass_total + " " + t("f2p") + ", " + r.pass_to_pass_failed + " " + t("broken") + "<br>" + r.steps + " " + t("steps").toLowerCase() + ", " + Math.round(r.wall_time_s) + " s, " + money(r.cost_usd) + "<br>" + t("stop") + ": " + esc(r.stop_reason);
         var isSel = sel.task === tk.id && sel.model === mm;
-        mx += "<td>" + dot + '<button type="button" class="cell ' + (r.passed ? "pass" : "fail") + (isSel ? " sel" : "") + '" data-t="' + esc(tk.id) + '" data-m="' + esc(mm) + '" data-tip="' + esc(tipTxt) + '"><svg><use href="#' + (r.passed ? "i-ok" : "i-x") + '"/></svg>' + esc(r.passed ? t("ok") : t("fail")) + "</button></td>";
+        mx += "<td>" + dot + '<button type="button" class="cell ' + (r.passed ? "pass" : "fail") + (isSel ? " sel" : "") + '" data-t="' + esc(tk.id) + '" data-m="' + esc(mm) + '" data-tip="' + esc(tipTxt) + '"><svg><use href="#' + (r.passed ? "i-ok" : "i-x") + '"/></svg><span class="ct">' + esc(r.passed ? t("ok") : t("fail")) + "</span></button></td>";
       });
       mx += "</tr>";
     });

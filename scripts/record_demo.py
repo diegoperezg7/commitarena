@@ -19,7 +19,9 @@ def main(run_dirs: list[Path]) -> None:
     for d in run_dirs:
         meta = json.loads((d / "run.json").read_text())
         metas.append(meta)
-        models.update(meta["models"])
+        models.update(
+            json.loads(x)["model"] for x in (d / "results.jsonl").read_text().splitlines() if x.strip()
+        )
         cutoffs.update(meta.get("cutoffs", {}))
         results += [line for line in (d / "results.jsonl").read_text().splitlines() if line.strip()]
         TRAJ.mkdir(parents=True, exist_ok=True)

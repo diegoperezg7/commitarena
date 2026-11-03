@@ -61,7 +61,24 @@ git clone https://github.com/diegoperezg7/commitarena && cd commitarena && uv ru
 
 ## Ejemplo de salida
 
-__DEMO_TABLE__
+<!-- demo:start -->
+```text
+$ commitarena demo
+Recorded result (not a live run): 2026-11-03, commitarena 0.1.0, models mistral/codestral-latest,
+mistral/mistral-large-4, ollama/qwen3:4b-16k, on Darwin arm64 (Apple M4, 16 GB RAM).
+Repo: https://github.com/andialbrecht/sqlparse (BSD-3-Clause)
+Leaderboard
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┓
+┃ model                    ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
+│ mistral/mistral-large-4  │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5412 │   689,491 │    79 │      12.4 │
+│ ollama/qwen3:4b-16k      │   0/2 │   0% │             - │          0/2 │ 0.0000 │    29,682 │   938 │       3.0 │
+│ mistral/codestral-latest │  0/11 │   0% │           0/4 │          0/7 │ 0.9241 │ 2,945,928 │    88 │      29.1 │
+└──────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
+```
+<!-- demo:end -->
+
+<p align="center"><a href="https://diegoperezg7.github.io/commitarena/"><img src="docs/assets/report-dark.png" alt="report" width="760"></a></p>
 
 ## Úsalo en tu repo
 
@@ -153,7 +170,7 @@ print(res.passed, res.cost_usd, res.tokens_in, res.steps, res.wall_time_s)
 
 ## Datos de la demo
 
-La demo grabada usa 8 tareas minadas de [sqlparse](https://github.com/andialbrecht/sqlparse)
+La demo grabada usa 11 tareas minadas de [sqlparse](https://github.com/andialbrecht/sqlparse)
 (BSD-3-Clause, Copyright (c) 2016, Andi Albrecht). Los ficheros incluidos contienen los tests que fallan,
 los diffs de los tests y los fixes originales como diffs, cada uno enlazado a su commit.
 

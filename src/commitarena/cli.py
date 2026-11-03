@@ -22,7 +22,8 @@ app = typer.Typer(
     help="Your git history is the benchmark. Replay real bug fixes against any model, in a sandbox with "
     "no network.",
 )
-console = Console()
+# Wide enough for the leaderboard when output is piped (Rich falls back to 80 columns).
+console = Console(width=None if sys.stdout.isatty() else 120, highlight=False)
 err = Console(stderr=True)
 
 
@@ -101,12 +102,9 @@ def results_table(results, cutoffs: dict[str, str] | None = None) -> Table:
 
     rows = leaderboard([r.to_dict() if hasattr(r, "to_dict") else r for r in results], cutoffs or {})
     t = Table(title="Leaderboard", title_justify="left")
-    for col, just in [
-        ("model", "left"), ("pass", "right"), ("rate", "right"), ("before cutoff", "right"),
-        ("after cutoff", "right"), ("cost $", "right"), ("tokens", "right"), ("avg time s", "right"),
-        ("avg steps", "right"),
-    ]:  # fmt: skip
-        t.add_column(col, justify=just)
+    t.add_column("model", no_wrap=True)
+    for col in ("pass", "rate", "before cutoff", "after cutoff", "cost $", "tokens", "avg s", "avg steps"):
+        t.add_column(col, justify="right")
 
     def split(s):
         return f"{s['passed']}/{s['total']}" if s["total"] else "-"
@@ -291,7 +289,7 @@ def demo(
     console.print(f"Repo: {m.get('repo', '')} ({m.get('repo_license', '')})")
     console.print(results_table(data["results"], data["cutoffs"]))
     path = write_report(d, out)
-    console.print(f"Report: {path.resolve()}")
+    console.print(f"Report: {path}")
     console.print("Run it yourself: commitarena mine <repo> && commitarena run --tasks ... --models ...")
     if open_browser:
         webbrowser.open(path.resolve().as_uri())

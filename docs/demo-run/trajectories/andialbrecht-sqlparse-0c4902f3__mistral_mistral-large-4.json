@@ -1,0 +1,185 @@
+[
+ {
+  "role": "system",
+  "content": "You are a software engineer fixing a bug in a Python repository. The repository is at /work inside a Linux container with no network access (pip install will not work; the dependencies are already installed). Use the `bash` tool to inspect files, edit them (for example with python, sed or a heredoc) and run tests. Each call runs in a fresh shell starting in /work; long outputs are truncated.\n\nWork in small steps: read the failing tests, find the cause in the source code, make a minimal fix, and run the tests. Do not modify test files: they are restored before scoring. When the tests pass, reply with a one-line summary and no tool call to finish."
+ },
+ {
+  "role": "user",
+  "content": "The repository in /work has a bug or a missing behavior. These tests currently fail and must pass after your change:\n\n- tests.test_format::test_strip_ws_removes_trailing_ws_in_groups\n\nThe tests were written to describe the expected behavior:\n\n```diff\ndiff --git a/tests/test_format.py b/tests/test_format.py\n--- a/tests/test_format.py\n+++ b/tests/test_format.py\n@@ -100,7 +100,7 @@\n         sql = 'select * -- a comment\\n\\nfrom foo'\n         res = sqlparse.format(sql, strip_comments=True)\n         assert res == 'select *\\n\\nfrom foo'\n-        \n+\n     def test_strip_comments_preserves_whitespace(self):\n         sql = 'SELECT 1/*bar*/ AS foo'  # see issue772\n         res = sqlparse.format(sql, strip_comments=True)\n@@ -734,8 +734,8 @@\n         \"select foo->'bar', foo->'bar';\", reindent=True)\n     expected = \"select foo->'bar',\\n       foo->'bar';\"\n     assert formatted == expected\n-    \n-    \n+\n+\n @pytest.mark.parametrize('sql, expected_normal, expected_compact', [\n     ('case when foo then 1 else bar end',\n      'case\\n    when foo then 1\\n    else bar\\nend',\n@@ -745,3 +745,10 @@\n     formatted_compact = sqlparse.format(sql, reindent=True, compact=True)\n     assert formatted_normal == expected_normal\n     assert formatted_compact == expected_compact\n+\n+\n+def test_strip_ws_removes_trailing_ws_in_groups():  # issue782\n+    formatted = sqlparse.format('( where foo = bar  ) from',\n+                                strip_whitespace=True)\n+    expected = '(where foo = bar) from'\n+    assert formatted == expected\n```\n\nCurrent failure output (truncated):\n\n```\ntests.test_format::test_strip_ws_removes_trailing_ws_in_groups:\nAssertionError: assert '(where foo = bar ) from' == '(where foo = bar) from'\n  \n  - (where foo = bar) from\n  + (where foo = bar ) from\n  ?                 +\ndef test_strip_ws_removes_trailing_ws_in_groups():  # issue782\n        formatted = sqlparse.format('( where foo = bar  ) from',\n                                    strip_whitespace=True)\n        expected = '(where foo = bar) from'\n>       assert formatted == expected\nE       AssertionError: assert '(where foo = bar ) from' == '(where foo = bar) from'\nE         \nE         - (where foo = bar) from\nE         + (where foo = bar ) from\nE         ?                 +\n\ntests/test_format.py:754: AssertionError\n```\n\nChange the source code, not the tests: test files are restored before scoring. Do not break the rest of the test suite.\nRun the relevant tests with: python -m pytest -q tests/test_format.py"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "S5wu5lFNK",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"ls /work && grep -n \\\"strip_whitespace\\\" -r /work/sqlparse | head -30\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "S5wu5lFNK",
+  "content": "AUTHORS\nCHANGELOG\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\n/work/sqlparse/formatter.py:41:    strip_ws = options.get('strip_whitespace', False)\n/work/sqlparse/formatter.py:43:        raise SQLParseError('Invalid value for strip_whitespace: '\n/work/sqlparse/formatter.py:72:        options['strip_whitespace'] = True\n/work/sqlparse/formatter.py:79:        options['strip_whitespace'] = True\n/work/sqlparse/formatter.py:166:    if options.get('strip_whitespace') or options.get('reindent'):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "WMH6CD6Nz",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -n 1,220p /work/sqlparse/formatter.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "WMH6CD6Nz",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\n\"\"\"SQL formatter\"\"\"\n\nfrom sqlparse import filters\nfrom sqlparse.exceptions import SQLParseError\n\n\ndef validate_options(options):  # noqa: C901\n    \"\"\"Validates options.\"\"\"\n    kwcase = options.get('keyword_case')\n    if kwcase not in [None, 'upper', 'lower', 'capitalize']:\n        raise SQLParseError('Invalid value for keyword_case: '\n                            '{!r}'.format(kwcase))\n\n    idcase = options.get('identifier_case')\n    if idcase not in [None, 'upper', 'lower', 'capitalize']:\n        raise SQLParseError('Invalid value for identifier_case: '\n                            '{!r}'.format(idcase))\n\n    ofrmt = options.get('output_format')\n    if ofrmt not in [None, 'sql', 'python', 'php']:\n        raise SQLParseError('Unknown output format: '\n                            '{!r}'.format(ofrmt))\n\n    strip_comments = options.get('strip_comments', False)\n    if strip_comments not in [True, False]:\n        raise SQLParseError('Invalid value for strip_comments: '\n                            '{!r}'.format(strip_comments))\n\n    space_around_operators = options.get('use_space_around_operators', False)\n    if space_around_operators not in [True, False]:\n        raise SQLParseError('Invalid value for use_space_around_operators: '\n                            '{!r}'.format(space_around_operators))\n\n    strip_ws = options.get('strip_whitespace', False)\n    if strip_ws not in [True, False]:\n        raise SQLParseError('Invalid value for strip_whitespace: '\n                            '{!r}'.format(strip_ws))\n\n    truncate_strings = options.get('truncate_strings')\n    if truncate_strings is not None:\n        try:\n            truncate_strings = int(truncate_strings)\n        except (ValueError, TypeError):\n            raise SQLParseError('Invalid value for truncate_strings: '\n                                '{!r}'.format(truncate_strings))\n        if truncate_strings <= 1:\n            raise SQLParseError('Invalid value for truncate_strings: '\n                                '{!r}'.format(truncate_strings))\n        options['truncate_strings'] = truncate_strings\n        options['truncate_char'] = options.get('truncate_char', '[...]')\n\n    indent_columns = options.get('indent_columns', False)\n    if indent_columns not in [True, False]:\n        raise SQLParseError('Invalid value for indent_columns: '\n                            '{!r}'.format(indent_columns))\n    elif indent_columns:\n        options['reindent'] = True  # enforce reindent\n    options['indent_columns'] = indent_columns\n\n    reindent = options.get('reindent', False)\n    if reindent not in [True, False]:\n        raise SQLParseError('Invalid value for reindent: '\n                            '{!r}'.format(reindent))\n    elif reindent:\n        options['strip_whitespace'] = True\n\n    reindent\n... [1804 characters truncated] ...\nmpact', False)\n    if compact not in [True, False]:\n        raise SQLParseError('compact requires a boolean value')\n    options['compact'] = compact\n\n    right_margin = options.get('right_margin')\n    if right_margin is not None:\n        try:\n            right_margin = int(right_margin)\n        except (TypeError, ValueError):\n            raise SQLParseError('right_margin requires an integer')\n        if right_margin < 10:\n            raise SQLParseError('right_margin requires an integer > 10')\n    options['right_margin'] = right_margin\n\n    return options\n\n\ndef build_filter_stack(stack, options):\n    \"\"\"Setup and return a filter stack.\n\n    Args:\n      stack: :class:`~sqlparse.filters.FilterStack` instance\n      options: Dictionary with options validated by validate_options.\n    \"\"\"\n    # Token filter\n    if options.get('keyword_case'):\n        stack.preprocess.append(\n            filters.KeywordCaseFilter(options['keyword_case']))\n\n    if options.get('identifier_case'):\n        stack.preprocess.append(\n            filters.IdentifierCaseFilter(options['identifier_case']))\n\n    if options.get('truncate_strings'):\n        stack.preprocess.append(filters.TruncateStringFilter(\n            width=options['truncate_strings'], char=options['truncate_char']))\n\n    if options.get('use_space_around_operators', False):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.SpacesAroundOperatorsFilter())\n\n    # After grouping\n    if options.get('strip_comments'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.StripCommentsFilter())\n\n    if options.get('strip_whitespace') or options.get('reindent'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.StripWhitespaceFilter())\n\n    if options.get('reindent'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.ReindentFilter(\n                char=options['indent_char'],\n                width=options['indent_width'],\n                indent_after_first=options['indent_after_first'],\n                indent_columns=options['indent_columns'],\n                wrap_after=options['wrap_after'],\n                comma_first=options['comma_first'],\n                compact=options['compact'],))\n\n    if options.get('reindent_aligned', False):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.AlignedIndentFilter(char=options['indent_char']))\n\n    if options.get('right_margin'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.RightMarginFilter(width=options['right_margin']))\n\n    # Serializer\n    if options.get('output_format'):\n        frmt = options['output_format']\n        if frmt.lower() == 'php':\n            fltr = filters.OutputPHPFilter()\n        elif frmt.lower() == 'python':\n            fltr = filters.OutputPythonFilter()\n        else:\n            fltr = None\n        if fltr is not None:\n            stack.postprocess.append(fltr)\n\n    return stack\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "jkpBwpslb",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -n \\\"class StripWhitespaceFilter\\\" -A 60 /work/sqlparse/filters.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "jkpBwpslb",
+  "content": "grep: /work/sqlparse/filters.py: No such file or directory\n\n[exit code 2]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "YfYYkXtO0",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"ls /work/sqlparse /work/sqlparse/filters 2>/dev/null; grep -rn \\\"class StripWhitespaceFilter\\\" /work/sqlparse\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "YfYYkXtO0",
+  "content": "/work/sqlparse:\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\nsql.py\ntokens.py\nutils.py\n\n/work/sqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n/work/sqlparse/filters/others.py:59:class StripWhitespaceFilter:\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "w5irZmbYm",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -n 1,140p /work/sqlparse/filters/others.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "w5irZmbYm",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nimport re\n\nfrom sqlparse import sql, tokens as T\nfrom sqlparse.utils import split_unquoted_newlines\n\n\nclass StripCommentsFilter:\n\n    @staticmethod\n    def _process(tlist):\n        def get_next_comment():\n            # TODO(andi) Comment types should be unified, see related issue38\n            return tlist.token_next_by(i=sql.Comment, t=T.Comment)\n\n        def _get_insert_token(token):\n            \"\"\"Returns either a whitespace or the line breaks from token.\"\"\"\n            # See issue484 why line breaks should be preserved.\n            # Note: The actual value for a line break is replaced by \\n\n            # in SerializerUnicode which will be executed in the\n            # postprocessing state.\n            m = re.search(r'([\\r\\n]+) *$', token.value)\n            if m is not None:\n                return sql.Token(T.Whitespace.Newline, m.groups()[0])\n            else:\n                return sql.Token(T.Whitespace, ' ')\n\n        tidx, token = get_next_comment()\n        while token:\n            pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)\n            nidx, next_ = tlist.token_next(tidx, skip_ws=False)\n            # Replace by whitespace if prev and next exist and if they're not\n            # whitespaces. This doesn't apply if prev or next is a parenthesis.\n            if (prev_ is None or next_ is None\n                    or prev_.is_whitespace or prev_.match(T.Punctuation, '(')\n                    or next_.is_whitespace or next_.match(T.Punctuation, ')')):\n                # Insert a whitespace to ensure the following SQL produces\n                # a valid SQL (see #425).\n                if prev_ is not None and not prev_.match(T.Punctuation, '('):\n                    tlist.tokens.insert(tidx, _get_insert_token(token))\n                tlist.tokens.remove(token)\n            else:\n                tlist.tokens[tidx] = _get_insert_token(token)\n\n            tidx, token = get_next_comment()\n\n    def process(self, stmt):\n        [self.process(sgroup) for sgroup in stmt.get_sublists()]\n        StripCommentsFilter._process(stmt)\n        return stmt\n\n\nclass StripWhitespaceFilter:\n    def _stripws(self, tlist):\n        func_name = '_stripws_{cls}'.format(cls=type(tlist).__name__)\n        func = getattr(self, func_name.lower(), self._stripws_default)\n        func(tlist)\n\n    @staticmethod\n    def _stripws_default(tlist):\n        last_was_ws = False\n        is_first_char = True\n        for token in tlist.tokens:\n            if token.is_whitespace:\n                token.value = '' if last_was_ws or is_first_char else ' '\n            last_was_ws = token.is_whitespace\n            is_first_char = False\n\n    def _stripws_identifierlist(self, tlist):\n        # Removes newlines before commas, see issue140\n        last_nl = None\n        for token in list(tlist.tokens):\n            if last_nl and token.ttype is T.Punctuation and token.value == ',':\n                tlist.tokens.remove(last_nl)\n            last_nl = token if token.is_whitespace else None\n\n            # next_ = tlist.token_next(token, skip_ws=False)\n            # if (next_ and not next_.is_whitespace and\n            #             token.ttype is T.Punctuation and token.value == ','):\n            #     tlist.insert_after(token, sql.Token(T.Whitespace, ' '))\n        return self._stripws_default(tlist)\n\n    def _stripws_parenthesis(self, tlist):\n        while tlist.tokens[1].is_whitespace:\n            tlist.tokens.pop(1)\n        while tlist.tokens[-2].is_whitespace:\n            tlist.tokens.pop(-2)\n        self._stripws_default(tlist)\n\n    def process(self, stmt, depth=0):\n        [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n        self._stripws(stmt)\n        if depth == 0 and stmt.tokens and stmt.tokens[-1].is_whitespace:\n            stmt.tokens.pop(-1)\n        return stmt\n\n\nclass SpacesAroundOperatorsFilter:\n    @staticmethod\n    def _process(tlist):\n\n        ttypes = (T.Operator, T.Comparison)\n        tidx, token = tlist.token_next_by(t=ttypes)\n        while token:\n            nidx, next_ = tlist.token_next(tidx, skip_ws=False)\n            if next_ and next_.ttype != T.Whitespace:\n                tlist.insert_after(tidx, sql.Token(T.Whitespace, ' '))\n\n            pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)\n            if prev_ and prev_.ttype != T.Whitespace:\n                tlist.insert_before(tidx, sql.Token(T.Whitespace, ' '))\n                tidx += 1  # has to shift since token inserted before it\n\n            # assert tlist.token_index(token) == tidx\n            tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n\n    def process(self, stmt):\n        [self.process(sgroup) for sgroup in stmt.get_sublists()]\n        SpacesAroundOperatorsFilter._process(stmt)\n        return stmt\n\n\nclass StripTrailingSemicolonFilter:\n\n    def process(self, stmt):\n        while stmt.tokens and (stmt.tokens[-1].is_whitespace\n                               or stmt.tokens[-1].value == ';'):\n            stmt.tokens.pop()\n        return stmt\n\n\n# ---------------------------\n# postprocess\n\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "6EEjUNUyU",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\np = sqlparse.parse('( where foo = bar  ) from')[0]\\ndef dump(t, d=0):\\n    print(' '*d, repr(t.ttype), type(t).__name__, repr(t.value))\\n    if t.is_group:\\n        for c in t.tokens: dump(c, d+2)\\ndump(p)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "6EEjUNUyU",
+  "content": " None Statement '( where foo = bar  ) from'\n   None Parenthesis '( where foo = bar  )'\n     Token.Punctuation Token '('\n     Token.Text.Whitespace Token ' '\n     None Where 'where foo = bar  '\n       Token.Keyword Token 'where'\n       Token.Text.Whitespace Token ' '\n       None Comparison 'foo = bar'\n         None Identifier 'foo'\n           Token.Name Token 'foo'\n         Token.Text.Whitespace Token ' '\n         Token.Operator.Comparison Token '='\n         Token.Text.Whitespace Token ' '\n         None Identifier 'bar'\n           Token.Name Token 'bar'\n       Token.Text.Whitespace Token ' '\n       Token.Text.Whitespace Token ' '\n     Token.Punctuation Token ')'\n   Token.Text.Whitespace Token ' '\n   Token.Keyword Token 'from'\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The trailing whitespace before `)` is nested inside the `Where` group, so `_stripws_parenthesis` doesn't remove it. Let me fix that:",
+  "tool_calls": [
+   {
+    "id": "KIAnp1fzu",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np = 'sqlparse/filters/others.py'\\ns = open(p).read()\\nold = \\\"\\\"\\\"    def _stripws_parenthesis(self, tlist):\\n        while tlist.tokens[1].is_whitespace:\\n            tlist.tokens.pop(1)\\n        while tlist.tokens[-2].is_whitespace:\\n            tlist.tokens.pop(-2)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    @staticmethod\\n    def _strip_trailing_ws(tlist):\\n        \\\\\\\"\\\\\\\"\\\\\\\"Removes trailing whitespace tokens, even inside nested groups.\\\\\\\"\\\\\\\"\\\\\\\"\\n        while tlist.tokens and tlist.tokens[-1].is_whitespace:\\n            tlist.tokens.pop()\\n        if tlist.tokens and tlist.tokens[-1].is_group:\\n            StripWhitespaceFilter._strip_trailing_ws(tlist.tokens[-1])\\n\\n    def _stripws_parenthesis(self, tlist):\\n        while tlist.tokens[1].is_whitespace:\\n            tlist.tokens.pop(1)\\n        # Trailing whitespace before the closing parenthesis may be nested\\n        # inside the last group (e.g. a WHERE clause), see issue782.\\n        self._strip_trailing_ws(tlist)\\n        while tlist.tokens[-2].is_whitespace:\\n            tlist.tokens.pop(-2)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nassert old in s\\nopen(p, 'w').write(s.replace(old, new))\\nEOF\\npython -m pytest -q tests/test_format.py 2>&1 | tail -3\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "KIAnp1fzu",
+  "content": "=========================== short test summary info ============================\nFAILED tests/test_format.py::test_strip_ws_removes_trailing_ws_in_groups - As...\n1 failed, 61 passed, 2 xfailed in 0.21s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "EobDQPbkE",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nprint(repr(sqlparse.format('( where foo = bar  ) from', strip_whitespace=True)))\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "EobDQPbkE",
+  "content": "'(where foo = bar ) from'\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The last token is `)` itself; the group is at `tokens[-2]`. Let me fix:",
+  "tool_calls": [
+   {
+    "id": "kbxVPf4p7",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\np = 'sqlparse/filters/others.py'\\ns = open(p).read()\\nold = \\\"\\\"\\\"    @staticmethod\\n    def _strip_trailing_ws(tlist):\\n        \\\\\\\"\\\\\\\"\\\\\\\"Removes trailing whitespace tokens, even inside nested groups.\\\\\\\"\\\\\\\"\\\\\\\"\\n        while tlist.tokens and tlist.tokens[-1].is_whitespace:\\n            tlist.tokens.pop()\\n        if tlist.tokens and tlist.tokens[-1].is_group:\\n            StripWhitespaceFilter._strip_trailing_ws(tlist.tokens[-1])\\n\\n    def _stripws_parenthesis(self, tlist):\\n        while tlist.tokens[1].is_whitespace:\\n            tlist.tokens.pop(1)\\n        # Trailing whitespace before the closing parenthesis may be nested\\n        # inside the last group (e.g. a WHERE clause), see issue782.\\n        self._strip_trailing_ws(tlist)\\n        while tlist.tokens[-2].is_whitespace:\\n            tlist.tokens.pop(-2)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    @staticmethod\\n    def _strip_trailing_ws(tlist):\\n        \\\\\\\"\\\\\\\"\\\\\\\"Removes trailing whitespace tokens, even inside nested groups.\\\\\\\"\\\\\\\"\\\\\\\"\\n        while tlist.tokens and tlist.tokens[-1].is_whitespace:\\n            tlist.tokens.pop()\\n        if tlist.tokens and tlist.tokens[-1].is_group:\\n            StripWhitespaceFilter._strip_trailing_ws(tlist.tokens[-1])\\n\\n    def _stripws_parenthesis(self, tlist):\\n        while tlist.tokens[1].is_whitespace:\\n            tlist.tokens.pop(1)\\n        # Trailing whitespace before the closing parenthesis may be nested\\n        # inside the last group (e.g. a WHERE clause), see issue782.\\n        if len(tlist.tokens) > 2 and tlist.tokens[-2].is_group:\\n            self._strip_trailing_ws(tlist.tokens[-2])\\n        while tlist.tokens[-2].is_whitespace:\\n            tlist.tokens.pop(-2)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nassert old in s\\nopen(p, 'w').write(s.replace(old, new))\\nEOF\\npython -c \\\"\\nimport sqlparse\\nprint(repr(sqlparse.format('( where foo = bar  ) from', strip_whitespace=True)))\\\"\\npython -m pytest -q tests/ 2>&1 | tail -3\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "kbxVPf4p7",
+  "content": "'(where foo = bar) from'\n........................................................................ [ 94%]\n.........................                                                [100%]\n454 passed, 2 xfailed, 1 xpassed in 0.49s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "All 454 tests pass, including the new `test_strip_ws_removes_trailing_ws_in_groups`.\n\n**Summary:** In `StripWhitespaceFilter._stripws_parenthesis` (sqlparse/filters/others.py), trailing whitespace before a closing `)` was only removed when it was a direct child of the parenthesis; when it was nested inside the last group (e.g. a `Where` clause), it survived. Added a recursive `_strip_trailing_ws` helper that pops trailing whitespace tokens from the last group inside the parenthesis before the existing cleanup, fixing issue782."
+ }
+]

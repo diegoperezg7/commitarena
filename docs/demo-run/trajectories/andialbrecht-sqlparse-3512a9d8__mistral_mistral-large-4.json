@@ -1,0 +1,313 @@
+[
+ {
+  "role": "system",
+  "content": "You are a software engineer fixing a bug in a Python repository. The repository is at /work inside a Linux container with no network access (pip install will not work; the dependencies are already installed). Use the `bash` tool to inspect files, edit them (for example with python, sed or a heredoc) and run tests. Each call runs in a fresh shell starting in /work; long outputs are truncated.\n\nWork in small steps: read the failing tests, find the cause in the source code, make a minimal fix, and run the tests. Do not modify test files: they are restored before scoring. When the tests pass, reply with a one-line summary and no tool call to finish."
+ },
+ {
+  "role": "user",
+  "content": "The repository in /work has a bug or a missing behavior. These tests currently fail and must pass after your change:\n\n- tests.test_regressions::test_format_malformed_input_does_not_crash[( :: )-options2]\n- tests.test_regressions::test_format_malformed_input_does_not_crash[( as )-options0]\n- tests.test_regressions::test_format_malformed_input_does_not_crash[( as )-options1]\n- tests.test_regressions::test_format_malformed_input_does_not_crash[case , end-options3]\n- tests.test_regressions::test_format_malformed_input_does_not_crash[case when a then begin b end else c end-options4]\n\nThe tests were written to describe the expected behavior:\n\n```diff\ndiff --git a/tests/test_regressions.py b/tests/test_regressions.py\n--- a/tests/test_regressions.py\n+++ b/tests/test_regressions.py\n@@ -516,3 +516,14 @@\n def test_max_recursion(limit_recursion):\n     with pytest.raises(SQLParseError):\n         sqlparse.parse('[' * 1000 + ']' * 1000)\n+\n+\n+@pytest.mark.parametrize('sql, options', [\n+    ('( as )', {'reindent': True}),\n+    ('( as )', {'strip_whitespace': True}),\n+    ('( :: )', {'reindent': True}),\n+    ('case , end', {'reindent_aligned': True}),\n+    ('case when a then begin b end else c end', {'reindent_aligned': True}),\n+])\n+def test_format_malformed_input_does_not_crash(sql, options):\n+    assert isinstance(sqlparse.format(sql, **options), str)\n```\n\nCurrent failure output (truncated):\n\n```\ntests.test_regressions::test_format_malformed_input_does_not_crash[( :: )-options2]:\nIndexError: list index out of range\nsql = '( :: )', options = {'reindent': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^\n\ntests.test_regressions::test_format_malformed_input_does_not_crash[( as )-options0]:\nIndexError: list index out of range\nsql = '( as )', options = {'reindent': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^\n\ntests.test_regressions::test_format_malformed_input_does_not_crash[( as )-options1]:\nIndexError: list index out of range\nsql = '( as )', options = {'strip_whitespace': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^\n```\n\nChange the source code, not the tests: test files are restored before scoring. Do not break the rest of the test suite.\nRun the relevant tests with: python -m pytest -q tests/test_regressions.py"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "ZIGKzlsAk",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && ls && python -m pytest -q tests/test_regressions.py 2>&1 | tail -20\"}"
+    }
+   },
+   {
+    "id": "ORtmBZljN",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && ls sqlparse sqlparse/filters\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ZIGKzlsAk",
+  "content": "AGENTS.md\nAUTHORS\nCHANGELOG\nCLAUDE.md\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.md\nSECURITY.md\nTODO\nbenchmarks\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\nuv.lock\n            ^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <Case 'case w...' at 0xFFFF86B0A150>, token = None, start = 0\n\n    def token_index(self, token, start=0):\n        \"\"\"Return list index of token.\"\"\"\n        start = start if isinstance(start, int) else self.token_index(start)\n>       return start + self.tokens[start:].index(token)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ValueError: None is not in list\n\nsqlparse/sql.py:313: ValueError\n=========================== short test summary info ============================\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( as )-options0]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( as )-options1]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( :: )-options2]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[case , end-options3]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[case when a then begin b end else c end-options4]\n5 failed, 93 passed, 1 xpassed in 0.17s\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ORtmBZljN",
+  "content": "sqlparse:\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\npy.typed\nsql.py\ntokens.py\nutils.py\n\nsqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "xSvPoknxc",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q \\\"tests/test_regressions.py::test_format_malformed_input_does_not_crash\\\" 2>&1 | head -150\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "xSvPoknxc",
+  "content": "FFFFF                                                                    [100%]\n=================================== FAILURES ===================================\n_________ test_format_malformed_input_does_not_crash[( as )-options0] __________\n\nsql = '( as )', options = {'reindent': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/engine/filter_stack.py:44: in run\n    filter_.process(stmt)\nsqlparse/filters/others.py:126: in process\n    [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/filters/others.py:127: in process\n    self._stripws(stmt)\nsqlparse/filters/others.py:88: in _stripws\n    func(tlist)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <sqlparse.filters.others.StripWhitespaceFilter object at 0xffff9112a360>\ntlist = <Parenthesis '( as )' at 0xFFFF8FDAE1D0>\n\n    def _stripws_parenthesis(self, tlist):\n>       while tlist.tokens[1].is_whitespace:\n              ^^^^^^^^^^^^^^^\nE       IndexError: list index out of range\n\nsqlparse/filters/others.py:115: IndexError\n_________ test_format_malformed_input_does_not_crash[( as )-options1] __________\n\nsql = '( as )', options = {'strip_whitespace': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/engine/filter_stack.py:44: in run\n    filter_.process(stmt)\nsqlparse/filters/others.py:126: in process\n    [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/filters/others.py:127: in process\n    self._stripws(stmt)\nsqlparse/filters/others.py:88: in _str\n... [276 characters truncated] ...\n>       while tlist.tokens[1].is_whitespace:\n              ^^^^^^^^^^^^^^^\nE       IndexError: list index out of range\n\nsqlparse/filters/others.py:115: IndexError\n_________ test_format_malformed_input_does_not_crash[( :: )-options2] __________\n\nsql = '( :: )', options = {'reindent': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/engine/filter_stack.py:44: in run\n    filter_.process(stmt)\nsqlparse/filters/others.py:126: in process\n    [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/filters/others.py:127: in process\n    self._stripws(stmt)\nsqlparse/filters/others.py:88: in _stripws\n    func(tlist)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <sqlparse.filters.others.StripWhitespaceFilter object at 0xffff9023be60>\ntlist = <Parenthesis '( :: )' at 0xFFFF8FD64050>\n\n    def _stripws_parenthesis(self, tlist):\n>       while tlist.tokens[1].is_whitespace:\n              ^^^^^^^^^^^^^^^\nE       IndexError: list index out of range\n\nsqlparse/filters/others.py:115: IndexError\n_______ test_format_malformed_input_does_not_crash[case , end-options3] ________\n\nsql = 'case , end', options = {'reindent_aligned': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/engine/filter_stack.py:44: in run\n    filter_.process(stmt)\nsqlparse/filters/aligned_indent.py:135: in process\n    self._process(stmt)\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:47: in _process_statement\n    self._process(sql.TokenList(tlist.tokens))\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "iTqPDWpoH",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q \\\"tests/test_regressions.py::test_format_malformed_input_does_not_crash\\\" 2>&1 | sed -n '150,300p'\"}"
+    }
+   },
+   {
+    "id": "HDLrn3BT0",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && cat sqlparse/filters/others.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "iTqPDWpoH",
+  "content": "    self._process(sql.TokenList(tlist.tokens))\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:127: in _process_default\n    self._process(sgroup)\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:84: in _process_case\n    tlist.insert_before(stmt, self.nl(offset_ - len(str(stmt))))\nsqlparse/sql.py:348: in insert_before\n    where = self.token_index(where)\n            ^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <Case 'case, ...' at 0xFFFF98FC46D0>, token = None, start = 0\n\n    def token_index(self, token, start=0):\n        \"\"\"Return list index of token.\"\"\"\n        start = start if isinstance(start, int) else self.token_index(start)\n>       return start + self.tokens[start:].index(token)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ValueError: None is not in list\n\nsqlparse/sql.py:313: ValueError\n_ test_format_malformed_input_does_not_crash[case when a then begin b end else c end-options4] _\n\nsql = 'case when a then begin b end else c end'\noptions = {'reindent_aligned': True}\n\n    @pytest.mark.parametrize('sql, options', [\n        ('( as )', {'reindent': True}),\n        ('( as )', {'strip_whitespace': True}),\n        ('( :: )', {'reindent': True}),\n        ('case , end', {'reindent_aligned': True}),\n        ('case when a then begin b end else c end', {'reindent_aligned': True}),\n    ])\n    def test_format_malformed_input_does_not_crash(sql, options):\n>       assert isinstance(sqlparse.format(sql, **options), str)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_regressions.py:529: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nsqlparse/__init__.py:60: in format\n    return \"\".join(stack.run(sql, encoding))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlparse/engine/filter_stack.py:44: in run\n    filter_.process(stmt)\nsqlparse/filters/aligned_indent.py:135: in process\n    self._process(stmt)\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:47: in _process_statement\n    self._process(sql.TokenList(tlist.tokens))\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:127: in _process_default\n    self._process(sgroup)\nsqlparse/filters/aligned_indent.py:132: in _process\n    func(tlist)\nsqlparse/filters/aligned_indent.py:84: in _process_case\n    tlist.insert_before(stmt, self.nl(offset_ - len(str(stmt))))\nsqlparse/sql.py:348: in insert_before\n    where = self.token_index(where)\n            ^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <Case 'case w...' at 0xFFFF98E9C2D0>, token = None, start = 0\n\n    def token_index(self, token, start=0):\n        \"\"\"Return list index of token.\"\"\"\n        start = start if isinstance(start, int) else self.token_index(start)\n>       return start + self.tokens[start:].index(token)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ValueError: None is not in list\n\nsqlparse/sql.py:313: ValueError\n=========================== short test summary info ============================\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( as )-options0]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( as )-options1]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[( :: )-options2]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[case , end-options3]\nFAILED tests/test_regressions.py::test_format_malformed_input_does_not_crash[case when a then begin b end else c end-options4]\n5 failed in 0.08s\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "HDLrn3BT0",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nimport re\n\nfrom sqlparse import sql\nfrom sqlparse import tokens as T\nfrom sqlparse.utils import split_unquoted_newlines\n\n\nclass StripCommentsFilter:\n\n    @staticmethod\n    def _process(tlist):\n        def get_next_comment(idx=-1):\n            # TODO(andi) Comment types should be unified, see related issue38\n            return tlist.token_next_by(i=sql.Comment, t=T.Comment, idx=idx)\n\n        def _get_insert_token(token):\n            \"\"\"Returns either a whitespace or the line breaks from token.\"\"\"\n            # See issue484 why line breaks should be preserved.\n            # Note: The actual value for a line break is replaced by \\n\n            # in SerializerUnicode which will be executed in the\n            # postprocessing state.\n            m = re.search(r'([\\r\\n]+) *$', token.value)\n            if m is not None:\n                return sql.Token(T.Whitespace.Newline, m.groups()[0])\n            else:\n                return sql.Token(T.Whitespace, ' ')\n\n        sql_hints = (T.Comment.Multiline.Hint, T.Comment.Single.Hint)\n        tidx, token = get_next_comment()\n        while token:\n            # skipping token remove if token is a SQL-Hint. issue262\n            is_sql_hint = False\n            if token.ttype in sql_hints:\n                is_sql_hint = True\n            elif isinstance(token, sql.Comment):\n                comment_tokens = token.tokens\n                if len(comment_tokens) > 0:\n                    if comment_tokens[0].ttype in sql_hints:\n                        is_sql_hint = True\n\n            if is_sql_hint:\n                # using current index as start index to search next token for\n                # preventing infinite loop in cases when token type is a\n                # \"SQL-Hint\" and has to be skipped\n                tidx, token = get_next_comment(idx=tidx)\n                continue\n\n            pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)\n            nidx, next_ = tlist.token_next(tidx, skip_ws=False)\n            # Replace by whitespace if prev and next exist and if they're not\n            # whitespaces. This doesn't apply if prev or next is a parenthesis.\n            if (\n                prev_ is None or next_ is None\n                or prev_.is_whitespace or prev_.match(T.Punctuation, '(')\n                or next_.is_whitespace or next_.match(T.Punctuation, ')')\n            ):\n                # Insert a whitespace to ensure the following SQL produces\n                # a valid SQL (see #425).\n                if prev_ is not None and not prev_.match(T.Punctuation, '('):\n                    tlist.tokens.insert(tidx, _get_insert_token(token))\n                tlist.tokens.remove(token)\n                tidx -= 1\n            else:\n                tlist.tokens[tidx] = _get_insert_token(token)\n\n            # using cu\n... [689 characters truncated] ...\n= True\n        for token in tlist.tokens:\n            if token.is_whitespace:\n                token.value = '' if last_was_ws or is_first_char else ' '\n            last_was_ws = token.is_whitespace\n            is_first_char = False\n\n    def _stripws_identifierlist(self, tlist):\n        # Removes newlines before commas, see issue140\n        last_nl = None\n        for token in list(tlist.tokens):\n            if last_nl and token.ttype is T.Punctuation and token.value == ',':\n                tlist.tokens.remove(last_nl)\n            last_nl = token if token.is_whitespace else None\n\n            # next_ = tlist.token_next(token, skip_ws=False)\n            # if (next_ and not next_.is_whitespace and\n            #             token.ttype is T.Punctuation and token.value == ','):\n            #     tlist.insert_after(token, sql.Token(T.Whitespace, ' '))\n        return self._stripws_default(tlist)\n\n    def _stripws_parenthesis(self, tlist):\n        while tlist.tokens[1].is_whitespace:\n            tlist.tokens.pop(1)\n        while tlist.tokens[-2].is_whitespace:\n            tlist.tokens.pop(-2)\n        if tlist.tokens[-2].is_group:\n            # save to remove the last whitespace\n            while tlist.tokens[-2].tokens[-1].is_whitespace:\n                tlist.tokens[-2].tokens.pop(-1)\n        self._stripws_default(tlist)\n\n    def process(self, stmt, depth=0):\n        [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n        self._stripws(stmt)\n        if depth == 0 and stmt.tokens and stmt.tokens[-1].is_whitespace:\n            stmt.tokens.pop(-1)\n        return stmt\n\n\nclass SpacesAroundOperatorsFilter:\n    @staticmethod\n    def _process(tlist):\n\n        ttypes = (T.Operator, T.Comparison)\n        tidx, token = tlist.token_next_by(t=ttypes)\n        while token:\n            nidx, next_ = tlist.token_next(tidx, skip_ws=False)\n            if next_ and next_.ttype != T.Whitespace:\n                tlist.insert_after(tidx, sql.Token(T.Whitespace, ' '))\n\n            pidx, prev_ = tlist.token_prev(tidx, skip_ws=False)\n            if prev_ and prev_.ttype != T.Whitespace:\n                tlist.insert_before(tidx, sql.Token(T.Whitespace, ' '))\n                tidx += 1  # has to shift since token inserted before it\n\n            # assert tlist.token_index(token) == tidx\n            tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n\n    def process(self, stmt):\n        [self.process(sgroup) for sgroup in stmt.get_sublists()]\n        SpacesAroundOperatorsFilter._process(stmt)\n        return stmt\n\n\nclass StripTrailingSemicolonFilter:\n\n    def process(self, stmt):\n        while stmt.tokens and (stmt.tokens[-1].is_whitespace\n                               or stmt.tokens[-1].value == ';'):\n            stmt.tokens.pop()\n        return stmt\n\n\n# ---------------------------\n# postprocess\n\nclass SerializerUnicode:\n    @staticmethod\n    def process(stmt):\n        lines = split_unquoted_newlines(stmt)\n        return '\\n'.join(line.rstrip() for line in lines)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "gi63XTPgu",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && sed -n '1,140p' sqlparse/filters/aligned_indent.py\"}"
+    }
+   },
+   {
+    "id": "6UiQ3rThV",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\ns = sqlparse.parse('( as )')[0]\\ndef dump(t, ind=0):\\n    print(' '*ind, type(t).__name__, repr(t.value)[:40], t.ttype)\\n    if t.is_group:\\n        for c in t.tokens: dump(c, ind+2)\\ndump(s)\\nprint('---')\\ns = sqlparse.parse('( :: )')[0]\\ndump(s)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "gi63XTPgu",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import sql\nfrom sqlparse import tokens as T\nfrom sqlparse.utils import indent, offset\n\n\nclass AlignedIndentFilter:\n    join_words = (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?'\n                  r'(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?|'\n                  r'(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b')\n    by_words = r'(GROUP|ORDER)\\s+BY\\b'\n    split_words = ('FROM',\n                   join_words, 'ON', by_words,\n                   'WHERE', 'AND', 'OR',\n                   'HAVING', 'LIMIT',\n                   'UNION', 'VALUES',\n                   'SET', 'BETWEEN', 'EXCEPT')\n\n    def __init__(self, char=' ', n='\\n'):\n        self.n = n\n        self.offset = 0\n        self.indent = 0\n        self.char = char\n        self._max_kwd_len = len('select')\n\n    def nl(self, offset=1):\n        # offset = 1 represent a single space after SELECT\n        offset = -len(offset) if not isinstance(offset, int) else offset\n        # add two for the space and parenthesis\n        indent = self.indent * (2 + self._max_kwd_len)\n\n        return sql.Token(T.Whitespace, self.n + self.char * (\n            self._max_kwd_len + offset + indent + self.offset))\n\n    def _process_statement(self, tlist):\n        if len(tlist.tokens) > 0 and tlist.tokens[0].is_whitespace \\\n                and self.indent == 0:\n            tlist.tokens.pop(0)\n\n        # process the main query body\n        self._process(sql.TokenList(tlist.tokens))\n\n    def _process_parenthesis(self, tlist):\n        # if this isn't a subquery, don't re-indent\n        _, token = tlist.token_next_by(m=(T.DML, 'SELECT'))\n        if token is not None:\n            with indent(self):\n                tlist.insert_after(tlist[0], self.nl('SELECT'))\n                # process the inside of the parenthesis\n                self._process_default(tlist)\n\n            # de-indent last parenthesis\n            tlist.insert_before(tlist[-1], self.nl())\n\n    def _process_identifierlist(self, tlist):\n        # columns being selected\n        identifiers = list(tlist.get_identifiers())\n        identifiers.pop(0)\n        [tlist.insert_before(token, self.nl()) for token in identifiers]\n        self._process_default(tlist)\n\n    def _process_case(self, tlist):\n        offset_ = len('case ') + len('when ')\n        cases = tlist.get_cases(skip_ws=True)\n        # align the end as well\n        end_token = tlist.token_next_by(m=(T.Keyword, 'END'))[1]\n        cases.append((None, [end_token]))\n\n        condition_width = [len(' '.join(map(str, cond))) if cond else 0\n                           for cond, _ in cases]\n        max_cond_width = max(condition_width)\n\n        for i, (cond, value) in enumerate(cases):\n            # cond is None when 'else or end'\n            stmt = cond[0] if cond else value[0]\n\n            if i > 0:\n                tlist.insert_before(stmt, self.nl(offset_ - len(str(stmt))))\n            if cond:\n                ws = sql.Token(T.Whitespace, self.char * (\n                    max_cond_width - condition_width[i]))\n                tlist.insert_after(cond[-1], ws)\n\n    def _next_token(self, tlist, idx=-1):\n        split_words = T.Keyword, self.split_words, True\n        tidx, token = tlist.token_next_by(m=split_words, idx=idx)\n        # treat \"BETWEEN x and y\" as a single statement\n        if token and token.normalized == 'BETWEEN':\n            tidx, token = self._next_token(tlist, tidx)\n            if token and token.normalized == 'AND':\n                tidx, token = self._next_token(tlist, tidx)\n        return tidx, token\n\n    def _split_kwds(self, tlist):\n        tidx, token = self._next_token(tlist)\n        while token:\n            # joins, group/order by are special case. only consider the first\n            # word as aligner\n            if (\n                token.match(T.Keyword, self.join_words, regex=True)\n                or token.match(T.Keyword, self.by_words, regex=True)\n            ):\n                token_indent = token.value.split()[0]\n            else:\n                token_indent = str(token)\n            tlist.insert_before(token, self.nl(token_indent))\n            tidx += 1\n            tidx, token = self._next_token(tlist, tidx)\n\n    def _process_default(self, tlist):\n        self._split_kwds(tlist)\n        # process any sub-sub statements\n        for sgroup in tlist.get_sublists():\n            idx = tlist.token_index(sgroup)\n            pidx, prev_ = tlist.token_prev(idx)\n            # HACK: make \"group/order by\" work. Longer than max_len.\n            offset_ = 3 if (\n                prev_ and prev_.match(T.Keyword, self.by_words, regex=True)\n            ) else 0\n            with offset(self, offset_):\n                self._process(sgroup)\n\n    def _process(self, tlist):\n        func_name = f'_process_{type(tlist).__name__}'\n        func = getattr(self, func_name.lower(), self._process_default)\n        func(tlist)\n\n    def process(self, stmt):\n        self._process(stmt)\n        return stmt\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "6UiQ3rThV",
+  "content": " Statement '( as )' None\n   Parenthesis '( as )' None\n     Identifier '( as )' None\n       Token '(' Token.Punctuation\n       Token ' ' Token.Text.Whitespace\n       Token 'as' Token.Keyword\n       Token ' ' Token.Text.Whitespace\n       Token ')' Token.Punctuation\n---\n Statement '( :: )' None\n   Parenthesis '( :: )' None\n     Identifier '( :: )' None\n       Token '(' Token.Punctuation\n       Token ' ' Token.Text.Whitespace\n       Token '::' Token.Punctuation\n       Token ' ' Token.Text.Whitespace\n       Token ')' Token.Punctuation\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "u8TZj57Uh",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\nfor q in ['case , end', 'case when a then begin b end else c end']:\\n    s = sqlparse.parse(q)[0]\\n    def dump(t, ind=0):\\n        print(' '*ind, type(t).__name__, repr(t.value)[:40], t.ttype)\\n        if t.is_group:\\n            for c in t.tokens: dump(c, ind+2)\\n    dump(s)\\n    print('cases:', s.get_cases(skip_ws=True) if hasattr(s,'get_cases') else None)\\n    print('====')\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "u8TZj57Uh",
+  "content": " Statement 'case , end' None\n   Case 'case , end' None\n     IdentifierList 'case , end' None\n       Token 'case' Token.Keyword\n       Token ' ' Token.Text.Whitespace\n       Token ',' Token.Punctuation\n       Token ' ' Token.Text.Whitespace\n       Token 'end' Token.Keyword\ncases: None\n====\n Statement 'case when a then begin b end else c end None\n   Case 'case when a then begin b end' None\n     Token 'case' Token.Keyword\n     Token ' ' Token.Text.Whitespace\n     Token 'when' Token.Keyword\n     Token ' ' Token.Text.Whitespace\n     Identifier 'a' None\n       Token 'a' Token.Name\n     Token ' ' Token.Text.Whitespace\n     Token 'then' Token.Keyword\n     Token ' ' Token.Text.Whitespace\n     Begin 'begin b end' None\n       Token 'begin' Token.Keyword\n       Token ' ' Token.Text.Whitespace\n       Identifier 'b' None\n         Token 'b' Token.Name\n       Token ' ' Token.Text.Whitespace\n       Token 'end' Token.Keyword\n   Token ' ' Token.Text.Whitespace\n   Token 'else' Token.Keyword\n   Token ' ' Token.Text.Whitespace\n   Identifier 'c' None\n     Token 'c' Token.Name\n   Token ' ' Token.Text.Whitespace\n   Token 'end' Token.Keyword\ncases: None\n====\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "LB8st5lt3",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -n \\\"get_cases\\\" -A 30 sqlparse/sql.py | head -60\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "LB8st5lt3",
+  "content": "581:    def get_cases(self, skip_ws=False):\n582-        \"\"\"Returns a list of 2-tuples (condition, value).\n583-\n584-        If an ELSE exists condition is None.\n585-        \"\"\"\n586-        CONDITION = 1\n587-        VALUE = 2\n588-\n589-        ret = []\n590-        mode = CONDITION\n591-\n592-        for token in self.tokens:\n593-            # Set mode from the current statement\n594-            if token.match(T.Keyword, 'CASE') or (skip_ws and token.ttype in T.Whitespace):\n595-                continue\n596-\n597-            elif token.match(T.Keyword, 'WHEN'):\n598-                ret.append(([], []))\n599-                mode = CONDITION\n600-\n601-            elif token.match(T.Keyword, 'THEN'):\n602-                mode = VALUE\n603-\n604-            elif token.match(T.Keyword, 'ELSE'):\n605-                ret.append((None, []))\n606-                mode = VALUE\n607-\n608-            elif token.match(T.Keyword, 'END'):\n609-                mode = None\n610-\n611-            # First condition without preceding WHEN\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "lu5MChJ3s",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && sed -n '581,640p' sqlparse/sql.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "lu5MChJ3s",
+  "content": "    def get_cases(self, skip_ws=False):\n        \"\"\"Returns a list of 2-tuples (condition, value).\n\n        If an ELSE exists condition is None.\n        \"\"\"\n        CONDITION = 1\n        VALUE = 2\n\n        ret = []\n        mode = CONDITION\n\n        for token in self.tokens:\n            # Set mode from the current statement\n            if token.match(T.Keyword, 'CASE') or (skip_ws and token.ttype in T.Whitespace):\n                continue\n\n            elif token.match(T.Keyword, 'WHEN'):\n                ret.append(([], []))\n                mode = CONDITION\n\n            elif token.match(T.Keyword, 'THEN'):\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'ELSE'):\n                ret.append((None, []))\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'END'):\n                mode = None\n\n            # First condition without preceding WHEN\n            if mode and not ret:\n                ret.append(([], []))\n\n            # Append token depending of the current mode\n            if mode == CONDITION:\n                ret[-1][0].append(token)\n\n            elif mode == VALUE:\n                ret[-1][1].append(token)\n\n        # Return cases list\n        return ret\n\n\nclass Function(NameAliasMixin, TokenList):\n    \"\"\"A function or procedure call.\"\"\"\n\n    def get_parameters(self):\n        \"\"\"Return a list of parameters.\"\"\"\n        parenthesis = self.token_next_by(i=Parenthesis)[1]\n        result = []\n        for token in parenthesis.tokens:\n            if isinstance(token, IdentifierList):\n                return token.get_identifiers()\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\n                     t=T.Literal):\n                result.append(token)\n        return result\n\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "F9GvcuvWb",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && cat sqlparse/filters/reindent.py && grep -n \\\"strip_whitespace\\\\|reindent\\\" sqlparse/formatter.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "F9GvcuvWb",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import sql\nfrom sqlparse import tokens as T\nfrom sqlparse.utils import indent, offset\n\n\nclass ReindentFilter:\n    def __init__(self, width=2, char=' ', wrap_after=0, n='\\n',\n                 comma_first=False, indent_after_first=False,\n                 indent_columns=False, compact=False):\n        self.n = n\n        self.width = width\n        self.char = char\n        self.indent = 1 if indent_after_first else 0\n        self.offset = 0\n        self.wrap_after = wrap_after\n        self.comma_first = comma_first\n        self.indent_columns = indent_columns\n        self.compact = compact\n        self._curr_stmt = None\n        self._last_stmt = None\n        self._last_func = None\n\n    @property\n    def leading_ws(self):\n        return self.offset + self.indent * self.width\n\n    def _current_line_len(self, token):\n        \"\"\"Returns the width of what's already emitted on *token*'s line.\n\n        The tokens preceding *token* are visited last one first, so the walk\n        stops at the line break that starts the current line.  Rebuilding the\n        statement prefix from its start instead made every caller\n        O(statement), and the callers running once per group (tuple lists,\n        identifier lists) quadratic in the number of groups -- a CPU\n        exhaustion vector (GHSA-cfqr-cjx5-5jcm).  The walk is inlined and\n        counts characters rather than collecting them: both matter, since a\n        line without any break still has to be measured token by token.\n        \"\"\"\n        length = 0\n        node = token\n        while node is not self._curr_stmt and node.parent is not None:\n            parent = node.parent\n            # ``Token`` doesn't implement ``__eq__``, so ``index()`` is an\n            # identity lookup and safe against tokens sharing a value.\n            stack = parent.tokens[:parent.tokens.index(node)]\n            while stack:\n                prev_ = stack.pop()\n                if prev_.is_group:\n                    stack.extend(prev_.tokens)\n                    continue\n\n                value = prev_.value\n                size = len(value)\n                if not size:\n                    continue\n                lines = value.splitlines()\n                if len(lines) == 1 and len(lines[0]) == size:\n                    # No break in here.  ``splitlines()`` hands back the value\n                    # itself in that case, so this costs a scan but no copy --\n                    # which is what keeps a long break-free line affordable.\n                    length += size\n                    continue\n\n                # ``value`` holds the break that starts the current line.  The\n                # sentinel keeps a trailing break from collapsing, so ``lines``\n                # always has one entry more than the numbe\n... [6928 characters truncated] ...\n(str(x) for x in cond or [])\n                    str_value = ''.join(str(x) for x in value)\n                    end_pos = self.offset + 1 + len(str_cond) + len(str_value)\n                    if (not self.compact and end_pos > self.wrap_after):\n                        token = value[0] if cond is None else cond[0]\n                        tlist.insert_before(token, self.nl())\n\n                # Line breaks on group level are done. let's add an offset of\n                # len \"when \", \"then \", \"else \"\n                with offset(self, len(\"WHEN \")):\n                    self._process_default(tlist)\n            end_idx, end = tlist.token_next_by(m=sql.Case.M_CLOSE)\n            if end_idx is not None and not self.compact:\n                tlist.insert_before(end_idx, self.nl())\n\n    def _process_values(self, tlist):\n        tlist.insert_before(0, self.nl())\n        tidx, token = tlist.token_next_by(i=sql.Parenthesis)\n        first_token = token\n        while token:\n            ptidx, ptoken = tlist.token_next_by(m=(T.Punctuation, ','),\n                                                idx=tidx)\n            if ptoken:\n                if self.comma_first:\n                    adjust = -2\n                    offset = self._get_offset(first_token) + adjust\n                    tlist.insert_before(ptoken, self.nl(offset))\n                else:\n                    tlist.insert_after(ptoken,\n                                       self.nl(self._get_offset(token)))\n            tidx, token = tlist.token_next_by(i=sql.Parenthesis, idx=tidx)\n\n    def _process_default(self, tlist, stmts=True):\n        self._split_statements(tlist) if stmts else None\n        self._split_kwds(tlist)\n        for sgroup in tlist.get_sublists():\n            self._process(sgroup)\n\n    def process(self, stmt):\n        self._curr_stmt = stmt\n        self._process(stmt)\n\n        if self._last_stmt is not None:\n            nl = '\\n' if str(self._last_stmt).endswith('\\n') else '\\n\\n'\n            stmt.tokens.insert(0, sql.Token(T.Whitespace, nl))\n\n        self._last_stmt = stmt\n        return stmt\n41:    strip_ws = options.get('strip_whitespace', False)\n43:        raise SQLParseError('Invalid value for strip_whitespace: '\n64:        options['reindent'] = True  # enforce reindent\n67:    reindent = options.get('reindent', False)\n68:    if reindent not in [True, False]:\n69:        raise SQLParseError('Invalid value for reindent: '\n70:                            f'{reindent!r}')\n71:    elif reindent:\n72:        options['strip_whitespace'] = True\n74:    reindent_aligned = options.get('reindent_aligned', False)\n75:    if reindent_aligned not in [True, False]:\n76:        raise SQLParseError('Invalid value for reindent_aligned: '\n77:                            f'{reindent!r}')\n78:    elif reindent_aligned:\n79:        options['strip_whitespace'] = True\n166:    if options.get('strip_whitespace') or options.get('reindent'):\n170:    if options.get('reindent'):\n182:    if options.get('reindent_aligned', False):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "3r4793Igv",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -n \\\"_process_case\\\" -A 40 sqlparse/filters/reindent.py | head -60\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "3r4793Igv",
+  "content": "233:    def _process_case(self, tlist):\n234-        iterable = iter(tlist.get_cases())\n235-        cond, _ = next(iterable)\n236-        first = next(cond[0].flatten())\n237-\n238-        with offset(self, self._get_offset(tlist[0])):\n239-            with offset(self, self._get_offset(first)):\n240-                for cond, value in iterable:\n241-                    str_cond = ''.join(str(x) for x in cond or [])\n242-                    str_value = ''.join(str(x) for x in value)\n243-                    end_pos = self.offset + 1 + len(str_cond) + len(str_value)\n244-                    if (not self.compact and end_pos > self.wrap_after):\n245-                        token = value[0] if cond is None else cond[0]\n246-                        tlist.insert_before(token, self.nl())\n247-\n248-                # Line breaks on group level are done. let's add an offset of\n249-                # len \"when \", \"then \", \"else \"\n250-                with offset(self, len(\"WHEN \")):\n251-                    self._process_default(tlist)\n252-            end_idx, end = tlist.token_next_by(m=sql.Case.M_CLOSE)\n253-            if end_idx is not None and not self.compact:\n254-                tlist.insert_before(end_idx, self.nl())\n255-\n256-    def _process_values(self, tlist):\n257-        tlist.insert_before(0, self.nl())\n258-        tidx, token = tlist.token_next_by(i=sql.Parenthesis)\n259-        first_token = token\n260-        while token:\n261-            ptidx, ptoken = tlist.token_next_by(m=(T.Punctuation, ','),\n262-                                                idx=tidx)\n263-            if ptoken:\n264-                if self.comma_first:\n265-                    adjust = -2\n266-                    offset = self._get_offset(first_token) + adjust\n267-                    tlist.insert_before(ptoken, self.nl(offset))\n268-                else:\n269-                    tlist.insert_after(ptoken,\n270-                                       self.nl(self._get_offset(token)))\n271-            tidx, token = tlist.token_next_by(i=sql.Parenthesis, idx=tidx)\n272-\n273-    def _process_default(self, tlist, stmts=True):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "Now let me apply fixes. First the `StripWhitespaceFilter._stripws_parenthesis`:",
+  "tool_calls": [
+   {
+    "id": "HlJl0outq",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np = 'sqlparse/filters/others.py'\\ns = open(p).read()\\nold = \\\"\\\"\\\"    def _stripws_parenthesis(self, tlist):\\n        while tlist.tokens[1].is_whitespace:\\n            tlist.tokens.pop(1)\\n        while tlist.tokens[-2].is_whitespace:\\n            tlist.tokens.pop(-2)\\n        if tlist.tokens[-2].is_group:\\n            # save to remove the last whitespace\\n            while tlist.tokens[-2].tokens[-1].is_whitespace:\\n                tlist.tokens[-2].tokens.pop(-1)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    def _stripws_parenthesis(self, tlist):\\n        # A parenthesis may hold a single grouped token (e.g. an\\n        # Identifier), in which case there is nothing to strip.\\n        if len(tlist.tokens) > 2:\\n            while tlist.tokens[1].is_whitespace:\\n                tlist.tokens.pop(1)\\n            while tlist.tokens[-2].is_whitespace:\\n                tlist.tokens.pop(-2)\\n            if tlist.tokens[-2].is_group:\\n                # save to remove the last whitespace\\n                while tlist.tokens[-2].tokens and \\\\\\\\\\n                        tlist.tokens[-2].tokens[-1].is_whitespace:\\n                    tlist.tokens[-2].tokens.pop(-1)\\n        self._stripws_default(tlist)\\n\\\"\\\"\\\"\\nassert old in s\\nopen(p, 'w').write(s.replace(old, new))\\nEOF\\nsed -n '110,130p' sqlparse/filters/others.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "HlJl0outq",
+  "content": "            #             token.ttype is T.Punctuation and token.value == ','):\n            #     tlist.insert_after(token, sql.Token(T.Whitespace, ' '))\n        return self._stripws_default(tlist)\n\n    def _stripws_parenthesis(self, tlist):\n        # A parenthesis may hold a single grouped token (e.g. an\n        # Identifier), in which case there is nothing to strip.\n        if len(tlist.tokens) > 2:\n            while tlist.tokens[1].is_whitespace:\n                tlist.tokens.pop(1)\n            while tlist.tokens[-2].is_whitespace:\n                tlist.tokens.pop(-2)\n            if tlist.tokens[-2].is_group:\n                # save to remove the last whitespace\n                while tlist.tokens[-2].tokens and \\\n                        tlist.tokens[-2].tokens[-1].is_whitespace:\n                    tlist.tokens[-2].tokens.pop(-1)\n        self._stripws_default(tlist)\n\n    def process(self, stmt, depth=0):\n        [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "Now the `AlignedIndentFilter._process_case`:",
+  "tool_calls": [
+   {
+    "id": "8IM1hUAzy",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\np = 'sqlparse/filters/aligned_indent.py'\\ns = open(p).read()\\nold = \\\"\\\"\\\"    def _process_case(self, tlist):\\n        offset_ = len('case ') + len('when ')\\n        cases = tlist.get_cases(skip_ws=True)\\n        # align the end as well\\n        end_token = tlist.token_next_by(m=(T.Keyword, 'END'))[1]\\n        cases.append((None, [end_token]))\\n\\n        condition_width = [len(' '.join(map(str, cond))) if cond else 0\\n                           for cond, _ in cases]\\n        max_cond_width = max(condition_width)\\n\\n        for i, (cond, value) in enumerate(cases):\\n            # cond is None when 'else or end'\\n            stmt = cond[0] if cond else value[0]\\n\\n            if i > 0:\\n                tlist.insert_before(stmt, self.nl(offset_ - len(str(stmt))))\\n            if cond:\\n                ws = sql.Token(T.Whitespace, self.char * (\\n                    max_cond_width - condition_width[i]))\\n                tlist.insert_after(cond[-1], ws)\\n\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    def _process_case(self, tlist):\\n        offset_ = len('case ') + len('when ')\\n        cases = tlist.get_cases(skip_ws=True)\\n        # align the end as well\\n        end_token = tlist.token_next_by(m=(T.Keyword, 'END'))[1]\\n        if end_token is not None:\\n            cases.append((None, [end_token]))\\n\\n        condition_width = [len(' '.join(map(str, cond))) if cond else 0\\n                           for cond, _ in cases]\\n        max_cond_width = max(condition_width) if condition_width else 0\\n\\n        for i, (cond, value) in enumerate(cases):\\n            # cond is None when 'else or end'\\n            stmt = cond[0] if cond else value[0]\\n            if stmt is None:\\n                continue\\n\\n            if i > 0:\\n                tlist.insert_before(stmt, self.nl(offset_ - len(str(stmt))))\\n            if cond:\\n                ws = sql.Token(T.Whitespace, self.char * (\\n                    max_cond_width - condition_width[i]))\\n                tlist.insert_after(cond[-1], ws)\\n\\\"\\\"\\\"\\nassert old in s\\nopen(p, 'w').write(s.replace(old, new))\\nEOF\\npython -m pytest -q \\\"tests/test_regressions.py::test_format_malformed_input_does_not_crash\\\" 2>&1 | tail -30\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "8IM1hUAzy",
+  "content": ".....                                                                    [100%]\n5 passed in 0.05s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "All 5 pass. Let me check related code paths for similar malformed-input crashes and run the full suite:",
+  "tool_calls": [
+   {
+    "id": "xAxux9nAE",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfor q in ['case , end', 'case when a then begin b end else c end', 'case end', 'case else end', '( as )', '( :: )', '()', '( )']:\\n    for opts in [{'reindent': True}, {'strip_whitespace': True}, {'reindent_aligned': True}, {'strip_comments': True}, {'keyword_case': 'upper'}]:\\n        try:\\n            r = sqlparse.format(q, **opts)\\n            assert isinstance(r, str)\\n        except Exception as e:\\n            print('FAIL', repr(q), opts, type(e).__name__, e)\\nprint('done')\\n\\\"\"}"
+    }
+   },
+   {
+    "id": "hfb6RTOGE",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q 2>&1 | tail -5\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "xAxux9nAE",
+  "content": "done\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "hfb6RTOGE",
+  "content": "........................................................................ [ 70%]\n.........X.............................................................. [ 84%]\n........................................................................ [ 98%]\n..........                                                               [100%]\n511 passed, 2 xfailed, 1 xpassed in 1.00s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "A1AlJx2fG",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport itertools, sqlparse\\nfrags = ['case', 'when', 'then', 'else', 'end', 'begin', ',', '(', ')', 'as', '::', 'select', 'a', ' ']\\nopts = [{'reindent': True}, {'strip_whitespace': True}, {'reindent_aligned': True}]\\nimport random\\nrandom.seed(0)\\nbad = 0\\nfor i in range(3000):\\n    q = ' '.join(random.choice(frags) for _ in range(random.randint(1, 6)))\\n    for o in opts:\\n        try:\\n            r = sqlparse.format(q, **o)\\n            assert isinstance(r, str)\\n        except Exception as e:\\n            bad += 1\\n            if bad < 15:\\n                print('FAIL', repr(q), o, type(e).__name__, e)\\nprint('total failures:', bad)\\nEOF\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "A1AlJx2fG",
+  "content": "total failures: 0\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "All tests pass, including a 3000-case randomized fuzz across the format options with no crashes.\n\n**Summary:** Fixed two crash paths on malformed SQL — `StripWhitespaceFilter._stripws_parenthesis` now guards against parentheses whose inner content is a single grouped token (e.g. `( as )`, `( :: )`), and `AlignedIndentFilter._process_case` now tolerates a missing `END` token and empty case conditions (e.g. `case , end`, `case when a then begin b end else c end`); the full test suite (511 passed) remains green."
+ }
+]

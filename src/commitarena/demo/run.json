@@ -1,0 +1,31 @@
+{
+ "tool": "commitarena",
+ "version": "0.1.0",
+ "updated_at": "2026-11-03T17:33:41+00:00",
+ "hardware": "Darwin arm64 (Apple M4, 16 GB RAM)",
+ "models": [
+  "mistral/codestral-latest",
+  "mistral/mistral-large-4",
+  "ollama/qwen3:4b-16k"
+ ],
+ "cutoffs": {
+  "mistral/mistral-large-4": "2026-10-01",
+  "mistral/codestral-latest": "2025-07-31",
+  "mistral/mistral-small-latest": "2026-03-01",
+  "ollama/qwen3:4b-16k": "2025-04-29"
+ },
+ "max_steps": 30,
+ "sandbox": {
+  "cpus": 2.0,
+  "memory": "2g",
+  "pids_limit": 512,
+  "command_timeout": 120,
+  "network": "none"
+ },
+ "context_file": null,
+ "strip_context_files": false,
+ "created_at": "2026-11-03T16:42:47+00:00",
+ "recorded": true,
+ "repo": "https://github.com/andialbrecht/sqlparse",
+ "repo_license": "BSD-3-Clause"
+}

@@ -1,0 +1,274 @@
+[
+ {
+  "role": "system",
+  "content": "You are a software engineer fixing a bug in a Python repository. The repository is at /work inside a Linux container with no network access (pip install will not work; the dependencies are already installed). Use the `bash` tool to inspect files, edit them (for example with python, sed or a heredoc) and run tests. Each call runs in a fresh shell starting in /work; long outputs are truncated.\n\nWork in small steps: read the failing tests, find the cause in the source code, make a minimal fix, and run the tests. Do not modify test files: they are restored before scoring. When the tests pass, reply with a one-line summary and no tool call to finish."
+ },
+ {
+  "role": "user",
+  "content": "The repository in /work has a bug or a missing behavior. These tests currently fail and must pass after your change:\n\n- tests.test_grouping::test_grouping_alias_ctas_lowercase_as\n\nThe tests were written to describe the expected behavior:\n\n```diff\ndiff --git a/tests/test_grouping.py b/tests/test_grouping.py\n--- a/tests/test_grouping.py\n+++ b/tests/test_grouping.py\n@@ -344,6 +344,14 @@\n     assert p.tokens[10].get_alias() == 'col1'\n     assert isinstance(p.tokens[10].tokens[0], sql.Function)\n \n+\n+def test_grouping_alias_ctas_lowercase_as():\n+    # 'as' is case-insensitive; a lowercase keyword in CREATE TABLE ... AS\n+    # SELECT must not disable function grouping in the SELECT body.\n+    p = sqlparse.parse('create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1')[0]\n+    assert p.tokens[10].get_alias() == 'col1'\n+    assert isinstance(p.tokens[10].tokens[0], sql.Function)\n+\n def test_grouping_subquery_no_parens():\n     # Not totally sure if this is the right approach...\n     # When a THEN clause contains a subquery w/o parenthesis around it *and*\n```\n\nCurrent failure output (truncated):\n\n```\ntests.test_grouping::test_grouping_alias_ctas_lowercase_as:\nAssertionError: assert None == 'col1'\n +  where None = get_alias()\n +    where get_alias = <Identifier 'coales...' at 0xFFFF9724CC50>.get_alias\ndef test_grouping_alias_ctas_lowercase_as():\n        # 'as' is case-insensitive; a lowercase keyword in CREATE TABLE ... AS\n        # SELECT must not disable function grouping in the SELECT body.\n        p = sqlparse.parse('create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1')[0]\n>       assert p.tokens[10].get_alias() == 'col1'\nE       AssertionError: assert None == 'col1'\nE        +  where None = get_alias()\nE        +    where get_alias = <Identifier 'coales...' at 0xFFFF9724CC50>.get_alias\n\ntests/test_grouping.py:352: AssertionError\n```\n\nChange the source code, not the tests: test files are restored before scoring. Do not break the rest of the test suite.\nRun the relevant tests with: python -m pytest -q tests/test_grouping.py"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "TxfNoui5U",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && ls && git log --oneline -3\"}"
+    }
+   },
+   {
+    "id": "iQy1GIVWJ",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/test_grouping.py::test_grouping_alias_ctas_lowercase_as 2>&1 | head -30\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "TxfNoui5U",
+  "content": "AGENTS.md\nAUTHORS\nCHANGELOG\nCLAUDE.md\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\nbenchmarks\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\nuv.lock\n6f8c4ed task start\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "iQy1GIVWJ",
+  "content": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____________________ test_grouping_alias_ctas_lowercase_as _____________________\n\n    def test_grouping_alias_ctas_lowercase_as():\n        # 'as' is case-insensitive; a lowercase keyword in CREATE TABLE ... AS\n        # SELECT must not disable function grouping in the SELECT body.\n        p = sqlparse.parse('create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1')[0]\n>       assert p.tokens[10].get_alias() == 'col1'\nE       AssertionError: assert None == 'col1'\nE        +  where None = get_alias()\nE        +    where get_alias = <Identifier 'coales...' at 0xFFFFA6F1AF50>.get_alias\n\ntests/test_grouping.py:352: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_grouping.py::test_grouping_alias_ctas_lowercase_as - Assert...\n1 failed in 0.11s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "BoSPaOJuR",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && ls sqlparse && grep -rn \\\"'as'\\\" sqlparse/*.py | head -40\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "BoSPaOJuR",
+  "content": "__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\npy.typed\nsql.py\ntokens.py\nutils.py\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "RUfM4jF7d",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -rn \\\"AS\\\\b\\\" sqlparse/filters/*.py sqlparse/engine/*.py | head -40; ls sqlparse/filters sqlparse/engine\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "RUfM4jF7d",
+  "content": "sqlparse/engine/grouping.py:124:            or token.match(T.Keyword, 'AS')\nsqlparse/engine/grouping.py:196:        return token.is_keyword and token.normalized == 'AS'\nsqlparse/engine/grouping.py:363:    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\nsqlparse/engine/grouping.py:366:    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\nsqlparse/engine/grouping.py:371:        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\nsqlparse/engine/grouping.py:384:        if tmp_token.value == 'AS':\nsqlparse/engine:\n__init__.py\nfilter_stack.py\ngrouping.py\nstatement_splitter.py\n\nsqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "Lm3Izwo5v",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && sed -n 100,220p sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "Lm3Izwo5v",
+  "content": "def group_typecasts(tlist):\n    def match(token):\n        return token.match(T.Punctuation, '::')\n\n    def valid(token):\n        return token is not None\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_tzcasts(tlist):\n    def match(token):\n        return token.ttype == T.Keyword.TZCast\n\n    def valid_prev(token):\n        return token is not None\n\n    def valid_next(token):\n        return token is not None and (\n            token.is_whitespace\n            or token.match(T.Keyword, 'AS')\n            or token.match(*sql.TypedLiteral.M_CLOSE)\n        )\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_typed_literal(tlist):\n    # definitely not complete, see e.g.:\n    # https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/interval-literal-syntax\n    # https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/interval-literals\n    # https://www.postgresql.org/docs/9.1/datatype-datetime.html\n    # https://www.postgresql.org/docs/9.1/functions-datetime.html\n    def match(token):\n        return imt(token, m=sql.TypedLiteral.M_OPEN)\n\n    def match_to_extend(token):\n        return isinstance(token, sql.TypedLiteral)\n\n    def valid_prev(token):\n        return token is not None\n\n    def valid_next(token):\n        return token is not None and token.match(*sql.TypedLiteral.M_CLOSE)\n\n    def valid_final(token):\n        return token is not None and token.match(*sql.TypedLiteral.M_EXTEND)\n\n    def post(tlist, pidx, tidx, nidx):\n        return tidx, nidx\n\n    _group(tlist, sql.TypedLiteral, match, valid_prev, valid_next,\n           post, extend=False)\n    _group(tlist, sql.TypedLiteral, match_to_extend, valid_prev, valid_final,\n           post, extend=True)\n\n\ndef group_period(tlist):\n    def match(token):\n        for ttype, value in ((T.Punctuation, '.'),\n                             (T.Operator, '->'),\n                             (T.Operator, '->>')):\n            if token.match(ttype, value):\n                return True\n        return False\n\n    def valid_prev(token):\n        sqlcls = sql.SquareBrackets, sql.Identifier\n        ttypes = T.Name, T.String.Symbol\n        return imt(token, i=sqlcls, t=ttypes)\n\n    def valid_next(token):\n        # issue261, allow invalid next token\n        return True\n\n    def post(tlist, pidx, tidx, nidx):\n        # next_ validation is being performed here. issue261\n        sqlcls = sql.SquareBrackets, sql.Function\n        ttypes = T.Name, T.String.Symbol, T.Wildcard, T.String.Single\n        next_ = tlist[nidx] if nidx is not None else None\n        valid_next = imt(next_, i=sqlcls, t=ttypes)\n\n        return (pidx, nidx) if valid_next else (pidx, tidx)\n\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_as(tlist):\n    def match(token):\n        return token.is_keyword and token.normalized == 'AS'\n\n    def valid_prev(token):\n        return token.normalized == 'NULL' or not token.is_keyword\n\n    def valid_next(token):\n        ttypes = T.DML, T.DDL, T.CTE\n        return not imt(token, t=ttypes) and token is not None\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_assignment(tlist):\n    def match(token):\n        return token.match(T.Assignment, ':=')\n\n    def valid(token):\n        return token is not None and token.ttype not in (T.Keyword,)\n\n    def post(tlist, pidx, tidx, nidx):\n        m_semicolon = T.Punctuation, ';'\n        snidx, _ = tlist.token_next_by(m=m_semicolon, idx=nidx)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "53PB2uYea",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\np = sqlparse.parse('create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1')[0]\\nfor i,t in enumerate(p.tokens):\\n    print(i, repr(t), t.ttype, type(t).__name__)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "53PB2uYea",
+  "content": "0 <DDL 'create' at 0xFFFFAB200580> Token.Keyword.DDL Token\n1 <Whitespace ' ' at 0xFFFFAB200820> Token.Text.Whitespace Token\n2 <Keyword 'table' at 0xFFFFAB200AC0> Token.Keyword Token\n3 <Whitespace ' ' at 0xFFFFAB200B80> Token.Text.Whitespace Token\n4 <Identifier 'tbl1' at 0xFFFFAB1C1F50> None Identifier\n5 <Whitespace ' ' at 0xFFFFAB200C40> Token.Text.Whitespace Token\n6 <Keyword 'as' at 0xFFFFAB200CA0> Token.Keyword Token\n7 <Whitespace ' ' at 0xFFFFAB200D00> Token.Text.Whitespace Token\n8 <DML 'select' at 0xFFFFAB200D60> Token.Keyword.DML Token\n9 <Whitespace ' ' at 0xFFFFAB200DC0> Token.Text.Whitespace Token\n10 <Identifier 'coales...' at 0xFFFFAB1C1FD0> None Identifier\n11 <Whitespace ' ' at 0xFFFFAB201300> Token.Text.Whitespace Token\n12 <Keyword 'from' at 0xFFFFAB201360> Token.Keyword Token\n13 <Whitespace ' ' at 0xFFFFAB2013C0> Token.Text.Whitespace Token\n14 <Identifier 't1' at 0xFFFFAB1C02D0> None Identifier\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "Hbs5pwhlv",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\np = sqlparse.parse('create table tbl1 AS select coalesce(t1.col1, 0) as col1 from t1')[0]\\nfor i,t in enumerate(p.tokens):\\n    print(i, repr(t), t.ttype, type(t).__name__)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "Hbs5pwhlv",
+  "content": "0 <DDL 'create' at 0xFFFF93E08580> Token.Keyword.DDL Token\n1 <Whitespace ' ' at 0xFFFF93E08820> Token.Text.Whitespace Token\n2 <Keyword 'table' at 0xFFFF93E08AC0> Token.Keyword Token\n3 <Whitespace ' ' at 0xFFFF93E08B80> Token.Text.Whitespace Token\n4 <Identifier 'tbl1' at 0xFFFF93F50050> None Identifier\n5 <Whitespace ' ' at 0xFFFF93E08C40> Token.Text.Whitespace Token\n6 <Keyword 'AS' at 0xFFFF93E08CA0> Token.Keyword Token\n7 <Whitespace ' ' at 0xFFFF93E08D00> Token.Text.Whitespace Token\n8 <DML 'select' at 0xFFFF93E08D60> Token.Keyword.DML Token\n9 <Whitespace ' ' at 0xFFFF93E08DC0> Token.Text.Whitespace Token\n10 <Identifier 'coales...' at 0xFFFF93F50250> None Identifier\n11 <Whitespace ' ' at 0xFFFF93E09300> Token.Text.Whitespace Token\n12 <Keyword 'from' at 0xFFFF93E09360> Token.Keyword Token\n13 <Whitespace ' ' at 0xFFFF93E093C0> Token.Text.Whitespace Token\n14 <Identifier 't1' at 0xFFFF93F50350> None Identifier\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "ORy44Y3oB",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfor s in ['create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1','create table tbl1 AS select coalesce(t1.col1, 0) as col1 from t1']:\\n    p = sqlparse.parse(s)[0]\\n    print('---', s)\\n    for i,t in enumerate(p.tokens[10].tokens):\\n        print(' ', i, repr(t), t.ttype, type(t).__name__)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ORy44Y3oB",
+  "content": "--- create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1\n  0 <Name 'coales...' at 0xFFFFAA968E80> Token.Name Token\n  1 <Identifier '(t1.co...' at 0xFFFFAAAA02D0> None Identifier\n--- create table tbl1 AS select coalesce(t1.col1, 0) as col1 from t1\n  0 <Function 'coales...' at 0xFFFFAAAA2550> None Function\n  1 <Whitespace ' ' at 0xFFFFAA969C60> Token.Text.Whitespace Token\n  2 <Keyword 'as' at 0xFFFFAA969CC0> Token.Keyword Token\n  3 <Whitespace ' ' at 0xFFFFAA969D20> Token.Text.Whitespace Token\n  4 <Identifier 'col1' at 0xFFFFAAAA1B50> None Identifier\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "8bD8GRnVw",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -rn \\\"AS\\\" sqlparse/engine/grouping.py sqlparse/lexer.py sqlparse/keywords.py | grep -n \\\"'AS'\\\\|\\\\\\\"AS\\\\\\\"\\\" \"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "8bD8GRnVw",
+  "content": "1:sqlparse/engine/grouping.py:124:            or token.match(T.Keyword, 'AS')\n2:sqlparse/engine/grouping.py:196:        return token.is_keyword and token.normalized == 'AS'\n6:sqlparse/engine/grouping.py:384:        if tmp_token.value == 'AS':\n32:sqlparse/keywords.py:713:    'AS': tokens.Keyword,\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "DvniUsqfZ",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && sed -n 350,420p sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "DvniUsqfZ",
+  "content": "        if end is None:\n            end = tlist._groupable_tokens[-1]\n        else:\n            end = tlist.tokens[eidx - 1]\n        # TODO: convert this to eidx instead of end token.\n        # i think above values are len(tlist) and eidx-1\n        eidx = tlist.token_index(end)\n        tlist.group_tokens(sql.Where, tidx, eidx)\n        tidx, token = tlist.token_next_by(m=sql.Where.M_OPEN, idx=tidx)\n\n\n@recurse()\ndef group_aliased(tlist):\n    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n               sql.Operation, sql.Comparison)\n\n    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Identifier):\n            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\n\n\n@recurse(sql.Function)\ndef group_functions(tlist):\n    has_create = False\n    has_table = False\n    has_as = False\n    for tmp_token in tlist.tokens:\n        if tmp_token.value.upper() == 'CREATE':\n            has_create = True\n        if tmp_token.value.upper() == 'TABLE':\n            has_table = True\n        if tmp_token.value == 'AS':\n            has_as = True\n    if has_create and has_table and not has_as:\n        return\n\n    tidx, token = tlist.token_next_by(t=T.Name)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Parenthesis):\n            over_idx, over = tlist.token_next(nidx)\n            if over and isinstance(over, sql.Over):\n                eidx = over_idx\n            else:\n                eidx = nidx\n            tlist.group_tokens(sql.Function, tidx, eidx)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n\n\n@recurse(sql.Identifier)\ndef group_order(tlist):\n    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if imt(prev_, i=sql.Identifier, t=T.Number):\n            tlist.group_tokens(sql.Identifier, pidx, tidx)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n\n\n@recurse()\ndef align_comments(tlist):\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if isinstance(prev_, sql.TokenList):\n            tlist.group_tokens(sql.TokenList, pidx, tidx, extend=True)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "8Ty95HRjk",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -n \\\"def match\\\" -A 10 sqlparse/sql.py | head -20\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "8Ty95HRjk",
+  "content": "97:    def match(self, ttype, values, regex=False):\n98-        \"\"\"Checks whether the token matches the given arguments.\n99-\n100-        *ttype* is a token type as defined in `sqlparse.tokens`. If it does\n101-        not match, ``False`` is returned.\n102-        *values* is a list of possible values for this token. For match to be\n103-        considered valid, the token value needs to be in this list. For tokens\n104-        of type ``Keyword`` the comparison is case-insensitive. For\n105-        convenience, a single value can be given passed as a string.\n106-        If *regex* is ``True``, the given values are treated as regular\n107-        expressions. Partial matches are allowed. Defaults to ``False``.\n--\n264:        def matcher(tk):\n265-            return not ((skip_ws and tk.is_whitespace)\n266-                        or (skip_cm and imt(tk, t=T.Comment, i=Comment)))\n267-        return self._token_matching(matcher)[1]\n268-\n269-    def token_next_by(self, i=None, m=None, t=None, idx=-1, end=None):\n270-        idx += 1\n271-        return self._token_matching(lambda tk: imt(tk, i, m, t), idx, end)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "bJqqvNMei",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && sed -n 97,130p sqlparse/sql.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "bJqqvNMei",
+  "content": "    def match(self, ttype, values, regex=False):\n        \"\"\"Checks whether the token matches the given arguments.\n\n        *ttype* is a token type as defined in `sqlparse.tokens`. If it does\n        not match, ``False`` is returned.\n        *values* is a list of possible values for this token. For match to be\n        considered valid, the token value needs to be in this list. For tokens\n        of type ``Keyword`` the comparison is case-insensitive. For\n        convenience, a single value can be given passed as a string.\n        If *regex* is ``True``, the given values are treated as regular\n        expressions. Partial matches are allowed. Defaults to ``False``.\n        \"\"\"\n        type_matched = self.ttype is ttype\n        if not type_matched or values is None:\n            return type_matched\n\n        if isinstance(values, str):\n            values = (values,)\n\n        if regex:\n            # TODO: Add test for regex with is_keyword = false\n            flag = re.IGNORECASE if self.is_keyword else 0\n            values = (re.compile(v, flag) for v in values)\n\n            return any(pattern.search(self.normalized) for pattern in values)\n\n        if self.is_keyword:\n            values = (v.upper() for v in values)\n\n        return self.normalized in values\n\n    def within(self, group_cls):\n        \"\"\"Returns ``True`` if this token is within *group_cls*.\n\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "TlP2br3DX",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/engine/grouping.py'\\ns=open(p).read()\\nold=\\\"\\\"\\\"        if tmp_token.value == 'AS':\\n            has_as = True\\\"\\\"\\\"\\nnew=\\\"\\\"\\\"        if tmp_token.match(T.Keyword, 'AS'):\\n            has_as = True\\\"\\\"\\\"\\nassert old in s\\ns=s.replace(old,new)\\nopen(p,'w').write(s)\\nEOF\\npython -m pytest -q tests/test_grouping.py 2>&1 | tail -3\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "TlP2br3DX",
+  "content": "........................................................................ [ 72%]\n............................                                             [100%]\n100 passed in 0.14s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "1pR7fJXTf",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/ 2>&1 | tail -5\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "1pR7fJXTf",
+  "content": "........................................................................ [ 58%]\n........................................................................ [ 73%]\n......X................................................................. [ 87%]\n...........................................................              [100%]\n488 passed, 2 xfailed, 1 xpassed in 1.04s\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "Fixed `group_functions` in `sqlparse/engine/grouping.py` to detect the CTAS `AS` keyword case-insensitively (`tmp_token.match(T.Keyword, 'AS')` instead of `tmp_token.value == 'AS'`), so a lowercase `as` in `CREATE TABLE ... AS SELECT` no longer disables function grouping. All 488 tests pass."
+ }
+]
