@@ -12,7 +12,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "Kcj0Vrcrd",
+    "id": "D6kNvbhjF",
     "type": "function",
     "function": {
      "name": "bash",
@@ -20,325 +20,218 @@
     }
    },
    {
-    "id": "lq9ws25Ae",
+    "id": "C4JIb6M9o",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -n \\\"get_parameters\\\\|class Function\\\\|class Identifier\\\\|class Window\\\" -r /work/sqlparse/*.py | head -30\"}"
+     "arguments": "{\"command\": \"grep -rn \\\"get_window\\\\|over\\\" /work/sqlparse --include=*.py | head -30\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "Kcj0Vrcrd",
+  "tool_call_id": "D6kNvbhjF",
   "content": "/work/tests/__init__.py\n/work/tests/test_keywords.py\n/work/tests/test_grouping.py\n/work/tests/conftest.py\n/work/tests/test_utils.py\n/work/tests/test_regressions.py\n/work/tests/test_cli.py\n/work/tests/test_split.py\n/work/tests/test_parse.py\n/work/tests/test_format.py\n/work/tests/test_tokenize.py\n/work/examples/column_defs_lowlevel.py\n/work/examples/extract_table_names.py\n/work/sqlparse/__main__.py\n/work/sqlparse/lexer.py\n/work/sqlparse/cli.py\n/work/sqlparse/tokens.py\n/work/sqlparse/__init__.py\n/work/sqlparse/utils.py\n/work/sqlparse/sql.py\n/work/sqlparse/formatter.py\n/work/sqlparse/keywords.py\n/work/sqlparse/exceptions.py\n---\nAUTHORS\nCHANGELOG\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "lq9ws25Ae",
-  "content": "/work/sqlparse/sql.py:443:class Identifier(NameAliasMixin, TokenList):\n/work/sqlparse/sql.py:474:class IdentifierList(TokenList):\n/work/sqlparse/sql.py:621:class Function(NameAliasMixin, TokenList):\n/work/sqlparse/sql.py:624:    def get_parameters(self):\n\n[exit code 0]"
+  "tool_call_id": "C4JIb6M9o",
+  "content": "/work/sqlparse/engine/grouping.py:239:def group_over(tlist):\n/work/sqlparse/engine/grouping.py:374:            over_idx, over = tlist.token_next(nidx)\n/work/sqlparse/engine/grouping.py:375:            if over and isinstance(over, sql.Over):\n/work/sqlparse/engine/grouping.py:376:                eidx = over_idx\n/work/sqlparse/engine/grouping.py:430:        group_over,\n/work/sqlparse/engine/statement_splitter.py:83:        # Run over all stream tokens\n/work/sqlparse/utils.py:66:    :param cls: Classes to not recurse over\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "imLs8cKtl",
+    "id": "AMgQ7HZFA",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"sed -n 380,700p /work/sqlparse/sql.py\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "imLs8cKtl",
-  "content": "        \"\"\"\n        dot_idx, _ = self.token_next_by(m=(T.Punctuation, '.'))\n        _, prev_ = self.token_prev(dot_idx)\n        return remove_quotes(prev_.value) if prev_ is not None else None\n\n    def _get_first_name(self, idx=None, reverse=False, keywords=False,\n                        real_name=False):\n        \"\"\"Returns the name of the first token with a name\"\"\"\n\n        tokens = self.tokens[idx:] if idx else self.tokens\n        tokens = reversed(tokens) if reverse else tokens\n        types = [T.Name, T.Wildcard, T.String.Symbol]\n\n        if keywords:\n            types.append(T.Keyword)\n\n        for token in tokens:\n            if token.ttype in types:\n                return remove_quotes(token.value)\n            elif isinstance(token, (Identifier, Function)):\n                return token.get_real_name() if real_name else token.get_name()\n\n\nclass Statement(TokenList):\n    \"\"\"Represents a SQL statement.\"\"\"\n\n    def get_type(self):\n        \"\"\"Returns the type of a statement.\n\n        The returned value is a string holding an upper-cased reprint of\n        the first DML or DDL keyword. If the first token in this group\n        isn't a DML or DDL keyword \"UNKNOWN\" is returned.\n\n        Whitespaces and comments at the beginning of the statement\n        are ignored.\n        \"\"\"\n        token = self.token_first(skip_cm=True)\n        if token is None:\n            # An \"empty\" statement that either has not tokens at all\n            # or only whitespace tokens.\n            return 'UNKNOWN'\n\n        elif token.ttype in (T.Keyword.DML, T.Keyword.DDL):\n            return token.normalized\n\n        elif token.ttype == T.Keyword.CTE:\n            # The WITH keyword should be followed by either an Identifier or\n            # an IdentifierList containing the CTE definitions;  the actual\n            # DML keyword (e.g. SELECT, INSERT) will follow next.\n            tidx = self.token_index(token)\n            while tidx is not None:\n                tidx, token = self.token_next(tidx, skip_ws=True)\n                if isinstance(token, (Identifier, IdentifierList)):\n                    tidx, token = self.token_next(tidx, skip_ws=True)\n\n                    if token is not None \\\n                            and token.ttype == T.Keyword.DML:\n                        return token.normalized\n\n        # Hmm, probably invalid syntax, so return unknown.\n        return 'UNKNOWN'\n\n\nclass Identifier(NameAliasMixin, TokenList):\n    \"\"\"Represents an identifier.\n\n    Identifiers may have aliases or typecasts.\n    \"\"\"\n\n    def is_wildcard(self):\n        \"\"\"Return ``True`` if this identifier contains a wildcard.\"\"\"\n        _, token = self.token_next_by(t=T.Wildcard)\n        return token is not None\n\n    def get_typecast(self):\n        \"\"\"Returns the typecast or ``None`` of this object as a string.\"\"\"\n        midx, marker = self.token_next_by(m=(T.Punctuation, '::'))\n        nidx, next_ = self.token_next(midx, skip_ws=False)\n        return next_.value if next_ else None\n\n    def get_or\n... [1997 characters truncated] ...\non used for example in WHERE clauses.\"\"\"\n\n    @property\n    def left(self):\n        return self.tokens[0]\n\n    @property\n    def right(self):\n        return self.tokens[-1]\n\n\nclass Comment(TokenList):\n    \"\"\"A comment.\"\"\"\n\n    def is_multiline(self):\n        return self.tokens and self.tokens[0].ttype == T.Comment.Multiline\n\n\nclass Where(TokenList):\n    \"\"\"A WHERE clause.\"\"\"\n    M_OPEN = T.Keyword, 'WHERE'\n    M_CLOSE = T.Keyword, (\n        'ORDER BY', 'GROUP BY', 'LIMIT', 'UNION', 'UNION ALL', 'EXCEPT',\n        'HAVING', 'RETURNING', 'INTO')\n\n\nclass Over(TokenList):\n    \"\"\"An OVER clause.\"\"\"\n    M_OPEN = T.Keyword, 'OVER'\n\n\nclass Having(TokenList):\n    \"\"\"A HAVING clause.\"\"\"\n    M_OPEN = T.Keyword, 'HAVING'\n    M_CLOSE = T.Keyword, ('ORDER BY', 'LIMIT')\n\n\nclass Case(TokenList):\n    \"\"\"A CASE statement with one or more WHEN and possibly an ELSE part.\"\"\"\n    M_OPEN = T.Keyword, 'CASE'\n    M_CLOSE = T.Keyword, 'END'\n\n    def get_cases(self, skip_ws=False):\n        \"\"\"Returns a list of 2-tuples (condition, value).\n\n        If an ELSE exists condition is None.\n        \"\"\"\n        CONDITION = 1\n        VALUE = 2\n\n        ret = []\n        mode = CONDITION\n\n        for token in self.tokens:\n            # Set mode from the current statement\n            if token.match(T.Keyword, 'CASE'):\n                continue\n\n            elif skip_ws and token.ttype in T.Whitespace:\n                continue\n\n            elif token.match(T.Keyword, 'WHEN'):\n                ret.append(([], []))\n                mode = CONDITION\n\n            elif token.match(T.Keyword, 'THEN'):\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'ELSE'):\n                ret.append((None, []))\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'END'):\n                mode = None\n\n            # First condition without preceding WHEN\n            if mode and not ret:\n                ret.append(([], []))\n\n            # Append token depending of the current mode\n            if mode == CONDITION:\n                ret[-1][0].append(token)\n\n            elif mode == VALUE:\n                ret[-1][1].append(token)\n\n        # Return cases list\n        return ret\n\n\nclass Function(NameAliasMixin, TokenList):\n    \"\"\"A function or procedure call.\"\"\"\n\n    def get_parameters(self):\n        \"\"\"Return a list of parameters.\"\"\"\n        parenthesis = self.tokens[-1]\n        result = []\n        for token in parenthesis.tokens:\n            if isinstance(token, IdentifierList):\n                return token.get_identifiers()\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\n                     t=T.Literal):\n                result.append(token)\n        return result\n\n\nclass Begin(TokenList):\n    \"\"\"A BEGIN/END block.\"\"\"\n    M_OPEN = T.Keyword, 'BEGIN'\n    M_CLOSE = T.Keyword, 'END'\n\n\nclass Operation(TokenList):\n    \"\"\"Grouping of operations\"\"\"\n\n\nclass Values(TokenList):\n    \"\"\"Grouping of values\"\"\"\n\n\nclass Command(TokenList):\n    \"\"\"Grouping of CLI commands.\"\"\"\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "VXlz2r6Ux",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"ls /work/sqlparse; grep -rn \\\"Over\\\\b\\\" /work/sqlparse/*.py | head -30\"}"
+     "arguments": "{\"command\": \"grep -n \\\"class Over\\\\|class Function\\\\|class Identifier\\\\|class Window\\\\|get_window\\\\|class Parenthesis\\\" /work/sqlparse/sql.py\"}"
     }
    },
    {
-    "id": "I2ALNtTMh",
+    "id": "bI6FYREwr",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\np = sqlparse.parse('foo(5) over win1')[0]\\nprint(p.tokens)\\nprint([type(t).__name__ for t in p.tokens])\\n\\\"\"}"
+     "arguments": "{\"command\": \"sed -n 220,280p /work/sqlparse/engine/grouping.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "VXlz2r6Ux",
-  "content": "__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\nsql.py\ntokens.py\nutils.py\n/work/sqlparse/sql.py:557:class Over(TokenList):\n\n[exit code 0]"
+  "tool_call_id": "AMgQ7HZFA",
+  "content": "443:class Identifier(NameAliasMixin, TokenList):\n474:class IdentifierList(TokenList):\n494:class Parenthesis(TokenList):\n557:class Over(TokenList):\n621:class Function(NameAliasMixin, TokenList):\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "I2ALNtTMh",
-  "content": "[<Function 'foo(5)...' at 0xFFFFB1ED7CB0>]\n['Function']\n\n[exit code 0]"
+  "tool_call_id": "bI6FYREwr",
+  "content": "    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Comparison, match,\n           valid_prev, valid_next, post, extend=False)\n\n\n@recurse(sql.Identifier)\ndef group_identifier(tlist):\n    ttypes = (T.String.Symbol, T.Name)\n\n    tidx, token = tlist.token_next_by(t=ttypes)\n    while token:\n        tlist.group_tokens(sql.Identifier, tidx, tidx)\n        tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n\n\n@recurse(sql.Over)\ndef group_over(tlist):\n    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if imt(next_, i=sql.Parenthesis, t=T.Name):\n            tlist.group_tokens(sql.Over, tidx, nidx)\n        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)\n\n\ndef group_arrays(tlist):\n    sqlcls = sql.SquareBrackets, sql.Identifier, sql.Function\n    ttypes = T.Name, T.String.Symbol\n\n    def match(token):\n        return isinstance(token, sql.SquareBrackets)\n\n    def valid_prev(token):\n        return imt(token, i=sqlcls, t=ttypes)\n\n    def valid_next(token):\n        return True\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, tidx\n\n    _group(tlist, sql.Identifier, match,\n           valid_prev, valid_next, post, extend=True, recurse=False)\n\n\ndef group_operator(tlist):\n    ttypes = T_NUMERICAL + T_STRING + T_NAME\n    sqlcls = (sql.SquareBrackets, sql.Parenthesis, sql.Function,\n              sql.Identifier, sql.Operation, sql.TypedLiteral)\n\n    def match(token):\n        return imt(token, t=(T.Operator, T.Wildcard))\n\n    def valid(token):\n        return imt(token, i=sqlcls, t=ttypes) \\\n            or (token and token.match(\n                T.Keyword,\n                ('CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP')))\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "Worq5K3Z9",
+    "id": "kumRjqWvZ",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"ls /work/sqlparse/filters /work/sqlparse/engine; grep -rn \\\"Function\\\\|Parenthesis\\\" /work/sqlparse/filters/grouping.py | head -40\"}"
+     "arguments": "{\"command\": \"sed -n 540,700p /work/sqlparse/sql.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "Worq5K3Z9",
-  "content": "/work/sqlparse/engine:\n__init__.py\nfilter_stack.py\ngrouping.py\nstatement_splitter.py\n\n/work/sqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\ngrep: /work/sqlparse/filters/grouping.py: No such file or directory\n\n[exit code 0]"
+  "tool_call_id": "kumRjqWvZ",
+  "content": "\n\nclass Comment(TokenList):\n    \"\"\"A comment.\"\"\"\n\n    def is_multiline(self):\n        return self.tokens and self.tokens[0].ttype == T.Comment.Multiline\n\n\nclass Where(TokenList):\n    \"\"\"A WHERE clause.\"\"\"\n    M_OPEN = T.Keyword, 'WHERE'\n    M_CLOSE = T.Keyword, (\n        'ORDER BY', 'GROUP BY', 'LIMIT', 'UNION', 'UNION ALL', 'EXCEPT',\n        'HAVING', 'RETURNING', 'INTO')\n\n\nclass Over(TokenList):\n    \"\"\"An OVER clause.\"\"\"\n    M_OPEN = T.Keyword, 'OVER'\n\n\nclass Having(TokenList):\n    \"\"\"A HAVING clause.\"\"\"\n    M_OPEN = T.Keyword, 'HAVING'\n    M_CLOSE = T.Keyword, ('ORDER BY', 'LIMIT')\n\n\nclass Case(TokenList):\n    \"\"\"A CASE statement with one or more WHEN and possibly an ELSE part.\"\"\"\n    M_OPEN = T.Keyword, 'CASE'\n    M_CLOSE = T.Keyword, 'END'\n\n    def get_cases(self, skip_ws=False):\n        \"\"\"Returns a list of 2-tuples (condition, value).\n\n        If an ELSE exists condition is None.\n        \"\"\"\n        CONDITION = 1\n        VALUE = 2\n\n        ret = []\n        mode = CONDITION\n\n        for token in self.tokens:\n            # Set mode from the current statement\n            if token.match(T.Keyword, 'CASE'):\n                continue\n\n            elif skip_ws and token.ttype in T.Whitespace:\n                continue\n\n            elif token.match(T.Keyword, 'WHEN'):\n                ret.append(([], []))\n                mode = CONDITION\n\n            elif token.match(T.Keyword, 'THEN'):\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'ELSE'):\n                ret.append((None, []))\n                mode = VALUE\n\n            elif token.match(T.Keyword, 'END'):\n                mode = None\n\n            # First condition without preceding WHEN\n            if mode and not ret:\n                ret.append(([], []))\n\n            # Append token depending of the current mode\n            if mode == CONDITION:\n                ret[-1][0].append(token)\n\n            elif mode == VALUE:\n                ret[-1][1].append(token)\n\n        # Return cases list\n        return ret\n\n\nclass Function(NameAliasMixin, TokenList):\n    \"\"\"A function or procedure call.\"\"\"\n\n    def get_parameters(self):\n        \"\"\"Return a list of parameters.\"\"\"\n        parenthesis = self.tokens[-1]\n        result = []\n        for token in parenthesis.tokens:\n            if isinstance(token, IdentifierList):\n                return token.get_identifiers()\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\n                     t=T.Literal):\n                result.append(token)\n        return result\n\n\nclass Begin(TokenList):\n    \"\"\"A BEGIN/END block.\"\"\"\n    M_OPEN = T.Keyword, 'BEGIN'\n    M_CLOSE = T.Keyword, 'END'\n\n\nclass Operation(TokenList):\n    \"\"\"Grouping of operations\"\"\"\n\n\nclass Values(TokenList):\n    \"\"\"Grouping of values\"\"\"\n\n\nclass Command(TokenList):\n    \"\"\"Grouping of CLI commands.\"\"\"\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "Zl4OKRENE",
+    "id": "7sLfvyuSd",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -n \\\"Function\\\\|Parenthesis\\\\|Over\\\" /work/sqlparse/engine/grouping.py | head -60\"}"
+     "arguments": "{\"command\": \"sed -n 340,400p /work/sqlparse/engine/grouping.py\"}"
+    }
+   },
+   {
+    "id": "EiB0KKojg",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfor s in ['foo(5) over win1', 'foo(5) over (PARTITION BY c1)']:\\n    p = sqlparse.parse(s)[0]\\n    print(s)\\n    print(p._pprint_tree())\\n\\\"\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "Zl4OKRENE",
-  "content": "57:    _group_matching(tlist, sql.Parenthesis)\n160:        sqlcls = sql.SquareBrackets, sql.Function\n205:    sqlcls = (sql.Parenthesis, sql.Function, sql.Identifier,\n238:@recurse(sql.Over)\n240:    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\n243:        if imt(next_, i=sql.Parenthesis, t=T.Name):\n244:            tlist.group_tokens(sql.Over, tidx, nidx)\n245:        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)\n249:    sqlcls = sql.SquareBrackets, sql.Identifier, sql.Function\n270:    sqlcls = (sql.SquareBrackets, sql.Parenthesis, sql.Function,\n293:    sqlcls = (sql.Function, sql.Case, sql.Identifier, sql.Comparison,\n344:    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n355:@recurse(sql.Function)\n373:        if isinstance(next_, sql.Parenthesis):\n375:            if over and isinstance(over, sql.Over):\n379:            tlist.group_tokens(sql.Function, tidx, eidx)\n411:        if isinstance(token, sql.Parenthesis):\n\n[exit code 0]"
+  "tool_call_id": "7sLfvyuSd",
+  "content": "\n\n@recurse()\ndef group_aliased(tlist):\n    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n               sql.Operation, sql.Comparison)\n\n    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Identifier):\n            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\n\n\n@recurse(sql.Function)\ndef group_functions(tlist):\n    has_create = False\n    has_table = False\n    has_as = False\n    for tmp_token in tlist.tokens:\n        if tmp_token.value.upper() == 'CREATE':\n            has_create = True\n        if tmp_token.value.upper() == 'TABLE':\n            has_table = True\n        if tmp_token.value == 'AS':\n            has_as = True\n    if has_create and has_table and not has_as:\n        return\n\n    tidx, token = tlist.token_next_by(t=T.Name)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Parenthesis):\n            over_idx, over = tlist.token_next(nidx)\n            if over and isinstance(over, sql.Over):\n                eidx = over_idx\n            else:\n                eidx = nidx\n            tlist.group_tokens(sql.Function, tidx, eidx)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n\n\n@recurse(sql.Identifier)\ndef group_order(tlist):\n    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if imt(prev_, i=sql.Identifier, t=T.Number):\n            tlist.group_tokens(sql.Identifier, pidx, tidx)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n\n\n@recurse()\ndef align_comments(tlist):\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if isinstance(prev_, sql.TokenList):\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "EiB0KKojg",
+  "content": "foo(5) over win1\n`- 0 Function 'foo(5)...'\n   |- 0 Identifier 'foo'\n   |  `- 0 Name 'foo'\n   |- 1 Parenthesis '(5)'\n   |  |- 0 Punctuation '('\n   |  |- 1 Integer '5'\n   |  `- 2 Punctuation ')'\n   |- 2 Whitespace ' '\n   `- 3 Over 'over w...'\n      |- 0 Keyword 'over'\n      |- 1 Whitespace ' '\n      `- 2 Identifier 'win1'\n         `- 0 Name 'win1'\nNone\nfoo(5) over (PARTITION BY c1)\n`- 0 Function 'foo(5)...'\n   |- 0 Identifier 'foo'\n   |  `- 0 Name 'foo'\n   |- 1 Parenthesis '(5)'\n   |  |- 0 Punctuation '('\n   |  |- 1 Integer '5'\n   |  `- 2 Punctuation ')'\n   |- 2 Whitespace ' '\n   `- 3 Over 'over (...'\n      |- 0 Keyword 'over'\n      |- 1 Whitespace ' '\n      `- 2 Parenthesis '(PARTI...'\n         |- 0 Punctuation '('\n         |- 1 Keyword 'PARTIT...'\n         |- 2 Whitespace ' '\n         |- 3 Keyword 'BY'\n         |- 4 Whitespace ' '\n         |- 5 Identifier 'c1'\n         |  `- 0 Name 'c1'\n         `- 6 Punctuation ')'\nNone\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "R9r8mxhfh",
+    "id": "0vCebmUr0",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"sed -n 220,420p /work/sqlparse/engine/grouping.py\"}"
+     "arguments": "{\"command\": \"cd /work && grep -rn \\\"window\\\\|Over\\\" CHANGELOG docs -i | head -20; grep -n \\\"version\\\" pyproject.toml | head; git log --oneline | head -5\"}"
+    }
+   },
+   {
+    "id": "ncrDs0ug0",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && grep -rn \\\"get_window\\\\|Over\\\\b\\\" tests/*.py | head -20\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "R9r8mxhfh",
-  "content": "    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Comparison, match,\n           valid_prev, valid_next, post, extend=False)\n\n\n@recurse(sql.Identifier)\ndef group_identifier(tlist):\n    ttypes = (T.String.Symbol, T.Name)\n\n    tidx, token = tlist.token_next_by(t=ttypes)\n    while token:\n        tlist.group_tokens(sql.Identifier, tidx, tidx)\n        tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n\n\n@recurse(sql.Over)\ndef group_over(tlist):\n    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if imt(next_, i=sql.Parenthesis, t=T.Name):\n            tlist.group_tokens(sql.Over, tidx, nidx)\n        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)\n\n\ndef group_arrays(tlist):\n    sqlcls = sql.SquareBrackets, sql.Identifier, sql.Function\n    ttypes = T.Name, T.String.Symbol\n\n    def match(token):\n        return isinstance(token, sql.SquareBrackets)\n\n    def valid_prev(token):\n        return imt(token, i=sqlcls, t=ttypes)\n\n    def valid_next(token):\n        return True\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, tidx\n\n    _group(tlist, sql.Identifier, match,\n           valid_prev, valid_next, post, extend=True, recurse=False)\n\n\ndef group_operator(tlist):\n    ttypes = T_NUMERICAL + T_STRING + T_NAME\n    sqlcls = (sql.SquareBrackets, sql.Parenthesis, sql.Function,\n              sql.Identifier, sql.Operation, sql.TypedLiteral)\n\n    def match(token):\n        return imt(token, t=(T.Operator, T.Wildcard))\n\n    def valid(token):\n        return imt(token, i=sqlcls, t=ttypes) \\\n            or (token and token.match(\n                T.Keyword,\n                ('CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP')))\n\n    def post(tlist, pidx, tidx, nidx):\n        tlist[tidx].ttype = T.Operator\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Operation, match,\n           valid_prev, valid_next, post, extend=False)\n\n\ndef group_identifier_list(tlist):\n    m_role = T.Keyword, ('null', 'role')\n    sqlcls = (sql.Function, sql.Case, sql.Identifier, sql.Comparison,\n              sql.IdentifierList, sql.Operation)\n    ttypes = (T_NUMERICAL + T_STRING + T_NAME\n              + (T.Keyword, T.Comment, T.Wildcard))\n\n    def match(token):\n        return token.match(T.Punctuation, ',')\n\n    def valid(token):\n        return imt(token, i=sqlcls, m=m_role, t=ttypes)\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.IdentifierList, match,\n           valid_prev, valid_next, post, extend=True)\n\n\n@recurse(sql.Comment)\ndef group_comments(tlist):\n    tidx, token = tlist.token_next_by(t=T.Comment)\n    while token:\n        eidx, end = tlist.token_not_matching(\n            lambda tk: imt(tk, t=T.Comment) or tk.is_whitespace, idx=tidx)\n        if end is not None:\n            eidx, end = tlist.token_prev(eidx,\n... [309 characters truncated] ...\ne.M_CLOSE, idx=tidx)\n\n        if end is None:\n            end = tlist._groupable_tokens[-1]\n        else:\n            end = tlist.tokens[eidx - 1]\n        # TODO: convert this to eidx instead of end token.\n        # i think above values are len(tlist) and eidx-1\n        eidx = tlist.token_index(end)\n        tlist.group_tokens(sql.Where, tidx, eidx)\n        tidx, token = tlist.token_next_by(m=sql.Where.M_OPEN, idx=tidx)\n\n\n@recurse()\ndef group_aliased(tlist):\n    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n               sql.Operation, sql.Comparison)\n\n    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Identifier):\n            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\n\n\n@recurse(sql.Function)\ndef group_functions(tlist):\n    has_create = False\n    has_table = False\n    has_as = False\n    for tmp_token in tlist.tokens:\n        if tmp_token.value.upper() == 'CREATE':\n            has_create = True\n        if tmp_token.value.upper() == 'TABLE':\n            has_table = True\n        if tmp_token.value == 'AS':\n            has_as = True\n    if has_create and has_table and not has_as:\n        return\n\n    tidx, token = tlist.token_next_by(t=T.Name)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Parenthesis):\n            over_idx, over = tlist.token_next(nidx)\n            if over and isinstance(over, sql.Over):\n                eidx = over_idx\n            else:\n                eidx = nidx\n            tlist.group_tokens(sql.Function, tidx, eidx)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n\n\n@recurse(sql.Identifier)\ndef group_order(tlist):\n    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if imt(prev_, i=sql.Identifier, t=T.Number):\n            tlist.group_tokens(sql.Identifier, pidx, tidx)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n\n\n@recurse()\ndef align_comments(tlist):\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if isinstance(prev_, sql.TokenList):\n            tlist.group_tokens(sql.TokenList, pidx, tidx, extend=True)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(i=sql.Comment, idx=tidx)\n\n\ndef group_values(tlist):\n    tidx, token = tlist.token_next_by(m=(T.Keyword, 'VALUES'))\n    start_idx = tidx\n    end_idx = -1\n    while token:\n        if isinstance(token, sql.Parenthesis):\n            end_idx = tidx\n        tidx, token = tlist.token_next(tidx)\n    if end_idx != -1:\n        tlist.group_tokens(sql.Values, start_idx, end_idx, extend=True)\n\n\ndef group(stmt):\n    for func in [\n        group_comments,\n\n[exit code 0]"
+  "tool_call_id": "0vCebmUr0",
+  "content": "CHANGELOG:43:  The vulnerability was discovered by @erik-krogh from GitHub\nCHANGELOG:93:  The vulnerability was discovered by @erik-krogh and @yoff from\nCHANGELOG:130:* Add WINDOW keyword (pr579 by ali-tny).\nCHANGELOG:659:* Code cleanup and better test coverage.\ndocs/source/conf.py:27:extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.coverage',\ndocs/source/conf.py:119:# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32\ndocs/source/conf.py:125:# so a file named \"default.css\" will overwrite the builtin \"default.css\".\ndocs/Makefile:25:\t@echo \"  changes   to make an overview of all changed/added/deprecated items\"\ndocs/Makefile:77:\t@echo \"The overview file is in build/changes.\"\n10:dynamic = [\"version\"]\n50:[tool.hatch.version]\n0c26ebf task start\n\n[exit code 0]"
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ncrDs0ug0",
+  "content": "tests/test_grouping.py:192:    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\ntests/test_grouping.py:199:    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\ntests/test_grouping.py:398:    assert isinstance(p.tokens[0].get_window(), sql.Identifier)\ntests/test_grouping.py:402:    assert isinstance(p.tokens[0].get_window(), sql.Parenthesis)\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "qCbjiBCxI",
+    "id": "zFnPXHQiO",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\nfor s in ['foo(5) over win1', 'foo(5) over (PARTITION BY c1)']:\\n    p = sqlparse.parse(s)[0]\\n    f = p.tokens[0]\\n    print(s, type(f).__name__)\\n    for t in f.tokens:\\n        print('   ', repr(t), type(t).__name__, t.ttype)\\n\\\"; sed -n 405,460p /work/sqlparse/engine/grouping.py\"}"
+     "arguments": "{\"command\": \"cd /work && sed -n 1,120p sqlparse/sql.py | grep -n \\\"def token_next\\\" -A 25 sqlparse/sql.py | head -60\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "qCbjiBCxI",
-  "content": "foo(5) over win1 Function\n    <Identifier 'foo' at 0xFFFFA0177D90> Identifier None\n    <Parenthesis '(5)' at 0xFFFFA0177BD0> Parenthesis None\n    <Whitespace ' ' at 0xFFFFA0238640> Token Token.Text.Whitespace\n    <Over 'over w...' at 0xFFFFA0177C40> Over None\nfoo(5) over (PARTITION BY c1) Function\n    <Identifier 'foo' at 0xFFFFA0240130> Identifier None\n    <Parenthesis '(5)' at 0xFFFFA0177E70> Parenthesis None\n    <Whitespace ' ' at 0xFFFFA0238AC0> Token Token.Text.Whitespace\n    <Over 'over (...' at 0xFFFFA0177F50> Over None\n\ndef group_values(tlist):\n    tidx, token = tlist.token_next_by(m=(T.Keyword, 'VALUES'))\n    start_idx = tidx\n    end_idx = -1\n    while token:\n        if isinstance(token, sql.Parenthesis):\n            end_idx = tidx\n        tidx, token = tlist.token_next(tidx)\n    if end_idx != -1:\n        tlist.group_tokens(sql.Values, start_idx, end_idx, extend=True)\n\n\ndef group(stmt):\n    for func in [\n        group_comments,\n\n        # _group_matching\n        group_brackets,\n        group_parenthesis,\n        group_case,\n        group_if,\n        group_for,\n        group_begin,\n\n        group_over,\n        group_functions,\n        group_where,\n        group_period,\n        group_arrays,\n        group_identifier,\n        group_order,\n        group_typecasts,\n        group_tzcasts,\n        group_typed_literal,\n        group_operator,\n        group_comparison,\n        group_as,\n        group_aliased,\n        group_assignment,\n\n        align_comments,\n        group_identifier_list,\n        group_values,\n    ]:\n        func(stmt)\n    return stmt\n\n\ndef _group(tlist, cls, match,\n           valid_prev=lambda t: True,\n           valid_next=lambda t: True,\n           post=None,\n           extend=True,\n           recurse=True\n           ):\n\n[exit code 0]"
+  "tool_call_id": "zFnPXHQiO",
+  "content": "264:    def token_next_by(self, i=None, m=None, t=None, idx=-1, end=None):\n265-        idx += 1\n266-        return self._token_matching(lambda tk: imt(tk, i, m, t), idx, end)\n267-\n268-    def token_not_matching(self, funcs, idx):\n269-        funcs = (funcs,) if not isinstance(funcs, (list, tuple)) else funcs\n270-        funcs = [lambda tk: not func(tk) for func in funcs]\n271-        return self._token_matching(funcs, idx)\n272-\n273-    def token_matching(self, funcs, idx):\n274-        return self._token_matching(funcs, idx)[1]\n275-\n276-    def token_prev(self, idx, skip_ws=True, skip_cm=False):\n277-        \"\"\"Returns the previous token relative to *idx*.\n278-\n279-        If *skip_ws* is ``True`` (the default) whitespace tokens are ignored.\n280-        If *skip_cm* is ``True`` comments are ignored.\n281-        ``None`` is returned if there's no previous token.\n282-        \"\"\"\n283-        return self.token_next(idx, skip_ws, skip_cm, _reverse=True)\n284-\n285-    # TODO: May need to re-add default value to idx\n286:    def token_next(self, idx, skip_ws=True, skip_cm=False, _reverse=False):\n287-        \"\"\"Returns the next token relative to *idx*.\n288-\n289-        If *skip_ws* is ``True`` (the default) whitespace tokens are ignored.\n290-        If *skip_cm* is ``True`` comments are ignored.\n291-        ``None`` is returned if there's no next token.\n292-        \"\"\"\n293-        if idx is None:\n294-            return None, None\n295-        idx += 1  # alot of code usage current pre-compensates for this\n296-\n297-        def matcher(tk):\n298-            return not ((skip_ws and tk.is_whitespace)\n299-                        or (skip_cm and imt(tk, t=T.Comment, i=Comment)))\n300-        return self._token_matching(matcher, idx, reverse=_reverse)\n301-\n302-    def token_index(self, token, start=0):\n303-        \"\"\"Return list index of token.\"\"\"\n304-        start = start if isinstance(start, int) else self.token_index(start)\n305-        return start + self.tokens[start:].index(token)\n306-\n307-    def group_tokens(self, grp_cls, start, end, include_end=True,\n308-                     extend=False):\n309-        \"\"\"Replace tokens by an instance of *grp_cls*.\"\"\"\n310-        start_idx = start\n311-        start = self.tokens[start_idx]\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "1KpZUKjyp",
+    "id": "EkTYYD7f1",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && grep -rn \\\"get_window\\\\|Over\\\\|window\\\" tests/ sqlparse/ docs/ CHANGELOG | grep -v \\\"\\\\.pyc\\\" | head -40; head -30 CHANGELOG; grep -n version pyproject.toml\"}"
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np = 'sqlparse/sql.py'\\ns = open(p).read()\\nold = '''    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.tokens[-1]\\n        result = []\\n        for token in parenthesis.tokens:\\n            if isinstance(token, IdentifierList):\\n                return token.get_identifiers()\\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\\n                     t=T.Literal):\\n                result.append(token)\\n        return result\\n'''\\nnew = old + '''\\n    def get_window(self):\\n        \\\"\\\"\\\"Return the window of a window function, None if there is none.\\n\\n        The window is either an identifier (a named window) or a\\n        parenthesis containing the window specification, e.g.\\n        ``foo(5) OVER (PARTITION BY c1)``.\\n        \\\"\\\"\\\"\\n        _, over = self.token_next_by(i=Over)\\n        if over is None:\\n            return None\\n        idx, token = over.token_next_by(m=Over.M_OPEN)\\n        if token is None:\\n            return None\\n        _, window = over.token_next(idx)\\n        return window\\n'''\\nassert old in s\\ns = s.replace(old, new)\\nopen(p, 'w').write(s)\\nEOF\\npython -c \\\"\\nimport sqlparse, sqlparse.sql as sql\\nfor s in ['foo(5) over win1', 'foo(5) over (PARTITION BY c1)', 'foo(5)', 'foo(null, bar)']:\\n    p = sqlparse.parse(s)[0]\\n    print(repr(s), type(p.tokens[0]).__name__, len(list(p.tokens[0].get_parameters())), type(p.tokens[0].get_window()).__name__)\\n\\\"\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "1KpZUKjyp",
-  "content": "tests/test_grouping.py:192:    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\ntests/test_grouping.py:199:    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\ntests/test_grouping.py:398:    assert isinstance(p.tokens[0].get_window(), sql.Identifier)\ntests/test_grouping.py:402:    assert isinstance(p.tokens[0].get_window(), sql.Parenthesis)\ntests/test_format.py:295:    def test_window_functions(self):\ntests/test_tokenize.py:205:def test_parse_window_as():\nsqlparse/engine/grouping.py:238:@recurse(sql.Over)\nsqlparse/engine/grouping.py:240:    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\nsqlparse/engine/grouping.py:244:            tlist.group_tokens(sql.Over, tidx, nidx)\nsqlparse/engine/grouping.py:245:        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)\nsqlparse/engine/grouping.py:375:            if over and isinstance(over, sql.Over):\nsqlparse/sql.py:557:class Over(TokenList):\nDevelopment Version\n-------------------\n\nNotable Changes\n\n* Drop support for Python 3.5, 3.6, and 3.7.\n* Python 3.12 is now supported (pr725, by hugovk).\n\nEnhancements:\n\n* Splitting statements now allows to remove the semicolon at the end.\n  Some database backends love statements without semicolon (issue742).\n* Support TypedLiterals in get_parameters (pr649, by Khrol).\n* Improve splitting of Transact SQL when using GO keyword (issue762).\n* Support for some JSON operators (issue682).\n* Improve formatting of statements containing JSON operators (issue542).\n* Support for BigQuery and Snowflake keywords (pr699, by griffatrasgo).\n\nBug Fixes\n\n* Ignore dunder attributes when creating Tokens (issue672).\n* Allow operators to precede dollar-quoted strings (issue763).\n* Fix parsing of nested order clauses (issue745, pr746 by john-bodley).\n* Thread-safe initialization of Lexer class (issue730).\n* Classify TRUNCATE as DDL and GRANT/REVOKE as DCL keywords (based on pr719\n  by josuc1, thanks for bringing this up!).\n* Fix parsing of PRIMARY KEY (issue740).\n\nOther\n\n10:dynamic = [\"version\"]\n50:[tool.hatch.version]\n\n[exit code 0]"
+  "tool_call_id": "EkTYYD7f1",
+  "content": "'foo(5) over win1' Function 1 Identifier\n'foo(5) over (PARTITION BY c1)' Function 0 Parenthesis\n'foo(5)' Function 1 NoneType\n'foo(null, bar)' Function 2 NoneType\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "`get_parameters` uses `self.tokens[-1]`, which is now the `Over` clause. Fix it to locate the parenthesis:",
+  "tool_calls": [
+   {
+    "id": "XjIwt4yIT",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\np = 'sqlparse/sql.py'\\ns = open(p).read()\\nold = '''    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.tokens[-1]\\n'''\\nnew = '''    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.get_parenthesis()\\n        if parenthesis is None:\\n            return []\\n'''\\nassert old in s\\ns = s.replace(old, new)\\n\\nold2 = '''    def get_window(self):'''\\nnew2 = '''    def get_parenthesis(self):\\n        \\\"\\\"\\\"Return the parenthesis of this function, None if there is none.\\\"\\\"\\\"\\n        for token in reversed(self.tokens):\\n            if isinstance(token, Parenthesis):\\n                return token\\n        return None\\n\\n    def get_window(self):'''\\nassert old2 in s\\ns = s.replace(old2, new2, 1)\\nopen(p, 'w').write(s)\\nEOF\\npython -c \\\"\\nimport sqlparse\\nfor s in ['foo(5) over win1', 'foo(5) over (PARTITION BY c1)', 'foo(5)', 'foo(null, bar)', 'foo()']:\\n    p = sqlparse.parse(s)[0]\\n    print(repr(s), type(p.tokens[0]).__name__, len(list(p.tokens[0].get_parameters())), type(p.tokens[0].get_window()).__name__)\\n\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "XjIwt4yIT",
+  "content": "'foo(5) over win1' Function 1 Identifier\n'foo(5) over (PARTITION BY c1)' Function 1 Parenthesis\n'foo(5)' Function 1 NoneType\n'foo(null, bar)' Function 2 NoneType\n'foo()' Function 0 NoneType\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "gOUsrRSTj",
+    "id": "dpVZybOaN",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && sed -n 180,210p tests/test_grouping.py && sed -n 285,310p tests/test_format.py && sed -n 195,215p tests/test_tokenize.py\"}"
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/ 2>&1 | tail -15\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "gOUsrRSTj",
-  "content": "def test_grouping_identifier_function():\n    p = sqlparse.parse('foo() as bar')[0]\n    assert isinstance(p.tokens[0], sql.Identifier)\n    assert isinstance(p.tokens[0].tokens[0], sql.Function)\n    p = sqlparse.parse('foo()||col2 bar')[0]\n    assert isinstance(p.tokens[0], sql.Identifier)\n    assert isinstance(p.tokens[0].tokens[0], sql.Operation)\n    assert isinstance(p.tokens[0].tokens[0].tokens[0], sql.Function)\n    p = sqlparse.parse('foo(c1) over win1 as bar')[0]\n    assert isinstance(p.tokens[0], sql.Identifier)\n    assert isinstance(p.tokens[0].tokens[0], sql.Function)\n    assert len(p.tokens[0].tokens[0].tokens) == 4\n    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\n    assert isinstance(p.tokens[0].tokens[0].tokens[3].tokens[2],\n                      sql.Identifier)\n    p = sqlparse.parse('foo(c1) over (partition by c2 order by c3) as bar')[0]\n    assert isinstance(p.tokens[0], sql.Identifier)\n    assert isinstance(p.tokens[0].tokens[0], sql.Function)\n    assert len(p.tokens[0].tokens[0].tokens) == 4\n    assert isinstance(p.tokens[0].tokens[0].tokens[3], sql.Over)\n    assert isinstance(p.tokens[0].tokens[0].tokens[3].tokens[2],\n                      sql.Parenthesis)\n\n\n@pytest.mark.parametrize('s', ['foo+100', 'foo + 100', 'foo*100'])\ndef test_grouping_operation(s):\n    p = sqlparse.parse(s)[0]\n    assert isinstance(p.tokens[0], sql.Operation)\n\n\ndef test_grouping_identifier_list():\n            '  from (',\n            '        select a,',\n            '               sum(b) as sum_b',\n            '          from table',\n            '         group by a,',\n            '                  z',\n            '       )',\n            ' order by 1,',\n            '          2'])\n\n    def test_window_functions(self):\n        sql = \"\"\"\n            select a,\n            SUM(a) OVER (PARTITION BY b ORDER BY c ROWS\n            BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as sum_a,\n            ROW_NUMBER() OVER\n            (PARTITION BY b, c ORDER BY d DESC) as row_num\n            from table\"\"\"\n        assert self.formatter(sql) == '\\n'.join([\n            'select a,',\n            '       SUM(a) OVER (PARTITION BY b ORDER BY c ROWS '\n            'BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as sum_a,',\n            '       ROW_NUMBER() OVER '\n            '(PARTITION BY b, c ORDER BY d DESC) as row_num',\n            '  from table'])\n\n    assert len(p.tokens) == 1\n    assert p.tokens[0].ttype is T.Keyword\n\n\ndef test_parse_order_by():\n    p = sqlparse.parse('ORDER BY')[0]\n    assert len(p.tokens) == 1\n    assert p.tokens[0].ttype is T.Keyword\n\n\ndef test_parse_window_as():\n    p = sqlparse.parse('WINDOW w AS')[0]\n    assert len(p.tokens) == 5\n    assert p.tokens[0].ttype is T.Keyword\n\n\n@pytest.mark.parametrize('s', (\n    \"LIKE\", \"ILIKE\", \"NOT LIKE\", \"NOT ILIKE\",\n    \"NOT   LIKE\", \"NOT    ILIKE\",\n))\ndef test_like_and_ilike_parsed_as_comparisons(s):\n\n[exit code 0]"
+  "tool_call_id": "dpVZybOaN",
+  "content": "..............................................................x......... [ 15%]\n....x................................................................... [ 31%]\n........................................................................ [ 47%]\n........................................................................ [ 63%]\n...........................................................x............ [ 79%]\n........................................................................ [ 95%]\n.....................                                                    [100%]\n450 passed, 3 xfailed in 0.78s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "awmNJCnrn",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && grep -n \\\"def token_next_by\\\\|def token_next\\\\b\\\\|def token_first\\\" -A 20 sqlparse/sql.py | sed -n 1,80p\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "awmNJCnrn",
-  "content": "249:    def token_first(self, skip_ws=True, skip_cm=False):\n250-        \"\"\"Returns the first child token.\n251-\n252-        If *skip_ws* is ``True`` (the default), whitespace\n253-        tokens are ignored.\n254-\n255-        if *skip_cm* is ``True`` (default: ``False``), comments are\n256-        ignored too.\n257-        \"\"\"\n258-        # this on is inconsistent, using Comment instead of T.Comment...\n259-        def matcher(tk):\n260-            return not ((skip_ws and tk.is_whitespace)\n261-                        or (skip_cm and imt(tk, t=T.Comment, i=Comment)))\n262-        return self._token_matching(matcher)[1]\n263-\n264:    def token_next_by(self, i=None, m=None, t=None, idx=-1, end=None):\n265-        idx += 1\n266-        return self._token_matching(lambda tk: imt(tk, i, m, t), idx, end)\n267-\n268-    def token_not_matching(self, funcs, idx):\n269-        funcs = (funcs,) if not isinstance(funcs, (list, tuple)) else funcs\n270-        funcs = [lambda tk: not func(tk) for func in funcs]\n271-        return self._token_matching(funcs, idx)\n272-\n273-    def token_matching(self, funcs, idx):\n274-        return self._token_matching(funcs, idx)[1]\n275-\n276-    def token_prev(self, idx, skip_ws=True, skip_cm=False):\n277-        \"\"\"Returns the previous token relative to *idx*.\n278-\n279-        If *skip_ws* is ``True`` (the default) whitespace tokens are ignored.\n280-        If *skip_cm* is ``True`` comments are ignored.\n281-        ``None`` is returned if there's no previous token.\n282-        \"\"\"\n283-        return self.token_next(idx, skip_ws, skip_cm, _reverse=True)\n284-\n--\n286:    def token_next(self, idx, skip_ws=True, skip_cm=False, _reverse=False):\n287-        \"\"\"Returns the next token relative to *idx*.\n288-\n289-        If *skip_ws* is ``True`` (the default) whitespace tokens are ignored.\n290-        If *skip_cm* is ``True`` comments are ignored.\n291-        ``None`` is returned if there's no next token.\n292-        \"\"\"\n293-        if idx is None:\n294-            return None, None\n295-        idx += 1  # alot of code usage current pre-compensates for this\n296-\n297-        def matcher(tk):\n298-            return not ((skip_ws and tk.is_whitespace)\n299-                        or (skip_cm and imt(tk, t=T.Comment, i=Comment)))\n300-        return self._token_matching(matcher, idx, reverse=_reverse)\n301-\n302-    def token_index(self, token, start=0):\n303-        \"\"\"Return list index of token.\"\"\"\n304-        start = start if isinstance(start, int) else self.token_index(start)\n305-        return start + self.tokens[start:].index(token)\n306-\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "Now I'll add a `get_window()` method to the `Function` class:",
-  "tool_calls": [
-   {
-    "id": "BCBsjCW6I",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\npath = 'sqlparse/sql.py'\\nsrc = open(path).read()\\nold = '''class Function(NameAliasMixin, TokenList):\\n    \\\"\\\"\\\"A function or procedure call.\\\"\\\"\\\"\\n\\n    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.tokens[-1]\\n        result = []\\n        for token in parenthesis.tokens:\\n            if isinstance(token, IdentifierList):\\n                return token.get_identifiers()\\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\\n                     t=T.Literal):\\n                result.append(token)\\n        return result\\n'''\\nnew = '''class Function(NameAliasMixin, TokenList):\\n    \\\"\\\"\\\"A function or procedure call.\\\"\\\"\\\"\\n\\n    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.tokens[-1]\\n        result = []\\n        for token in parenthesis.tokens:\\n            if isinstance(token, IdentifierList):\\n                return token.get_identifiers()\\n            elif imt(token, i=(Function, Identifier, TypedLiteral),\\n                     t=T.Literal):\\n                result.append(token)\\n        return result\\n\\n    def get_window(self):\\n        \\\"\\\"\\\"Return the window (OVER clause) of this function, if any.\\n\\n        The window is either an :class:`Identifier` (a named window)\\n        or a :class:`Parenthesis` (an inline window specification).\\n        Returns ``None`` if the function has no window.\\n        \\\"\\\"\\\"\\n        _, over = self.token_next_by(i=Over)\\n        if over is None:\\n            return None\\n        # the window is the first meaningful token following the\\n        # OVER keyword inside the Over clause\\n        oidx, _ = over.token_next_by(m=Over.M_OPEN)\\n        if oidx is None:\\n            return None\\n        _, window = over.token_next(oidx)\\n        return window\\n'''\\nassert old in src\\nopen(path, 'w').write(src.replace(old, new))\\nEOF\\npython -m pytest -q tests/test_grouping.py 2>&1 | tail -5\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "BCBsjCW6I",
-  "content": "\ntests/test_grouping.py:401: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_grouping.py::test_grouping_function - AssertionError: asser...\n1 failed, 99 passed in 0.14s\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "UoLUVgG4X",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\nfor s in ['foo(5) over win1', 'foo(5) over (PARTITION BY c1)']:\\n    f = sqlparse.parse(s)[0].tokens[0]\\n    w = f.get_window()\\n    print(s, '->', repr(w), type(w).__name__)\\n    over = f.token_next_by(i=sql.Over)[1]\\n    print('  over tokens:', [(repr(t), type(t).__name__) for t in over.tokens])\\n\\\"\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "UoLUVgG4X",
-  "content": "foo(5) over win1 -> <Identifier 'win1' at 0xFFFFB3B97D90> Identifier\n  over tokens: [(\"<Keyword 'over' at 0xFFFFB3C587C0>\", 'Token'), (\"<Whitespace ' ' at 0xFFFFB3C58880>\", 'Token'), (\"<Identifier 'win1' at 0xFFFFB3B97D90>\", 'Identifier')]\nfoo(5) over (PARTITION BY c1) -> <Parenthesis '(PARTI...' at 0xFFFFB3B97F50> Parenthesis\n  over tokens: [(\"<Keyword 'over' at 0xFFFFB3C58B20>\", 'Token'), (\"<Whitespace ' ' at 0xFFFFB3C58B80>\", 'Token'), (\"<Parenthesis '(PARTI...' at 0xFFFFB3B97F50>\", 'Parenthesis')]\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "`get_parameters` uses `self.tokens[-1]`, which is now the `Over` clause. Let me fix it to locate the parenthesis:",
-  "tool_calls": [
-   {
-    "id": "Y4YBAwynq",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\npath = 'sqlparse/sql.py'\\nsrc = open(path).read()\\nold = '''    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        parenthesis = self.tokens[-1]\\n'''\\nnew = '''    def get_parameters(self):\\n        \\\"\\\"\\\"Return a list of parameters.\\\"\\\"\\\"\\n        _, parenthesis = self.token_next_by(i=Parenthesis)\\n        if parenthesis is None:\\n            return []\\n'''\\nassert old in src\\nopen(path, 'w').write(src.replace(old, new))\\nEOF\\npython -m pytest -q tests/test_grouping.py 2>&1 | tail -3\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "Y4YBAwynq",
-  "content": "........................................................................ [ 72%]\n............................                                             [100%]\n100 passed in 0.12s\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "naIKvHo8A",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -m pytest -q 2>&1 | tail -5\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "naIKvHo8A",
-  "content": "........................................................................ [ 63%]\n...........................................................x............ [ 79%]\n........................................................................ [ 95%]\n.....................                                                    [100%]\n450 passed, 3 xfailed in 0.78s\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "All 450 tests pass. Let me sanity-check edge cases:",
-  "tool_calls": [
-   {
-    "id": "inNP6WFbc",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\nfor s in ['foo()', 'foo(null, bar)', 'foo(5)', 'foo(5) over win1', 'foo(5) over (PARTITION BY c1)', 'select foo(a) over w from t', 'foo(a, b) over (partition by c order by d) as x']:\\n    p = sqlparse.parse(s)[0]\\n    t = p.tokens[0] if not isinstance(p.tokens[0], sql.Statement) else p.tokens[1]\\n    f = t if isinstance(t, sql.Function) else [x for x in p.tokens if isinstance(x, sql.Function)][0]\\n    print(repr(s), '| params:', len(list(f.get_parameters())), '| window:', type(f.get_window()).__name__)\\n\\\"\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "inNP6WFbc",
-  "content": "Traceback (most recent call last):\n  File \"<string>\", line 7, in <module>\nIndexError: list index out of range\n'foo()' | params: 0 | window: NoneType\n'foo(null, bar)' | params: 2 | window: NoneType\n'foo(5)' | params: 1 | window: NoneType\n'foo(5) over win1' | params: 1 | window: Identifier\n'foo(5) over (PARTITION BY c1)' | params: 1 | window: Parenthesis\n'select foo(a) over w from t' | params: 1 | window: Identifier\n\n[exit code 1]"
- },
- {
-  "role": "assistant",
-  "content": "The last error was just my ad-hoc script's token selection, not the library. Verifying properly:",
-  "tool_calls": [
-   {
-    "id": "XlBx6Olz8",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import sql\\np = sqlparse.parse('foo(a, b) over (partition by c order by d) as x')[0]\\nident = p.tokens[0]\\nf = ident.tokens[0]\\nprint(type(ident).__name__, type(f).__name__, len(list(f.get_parameters())), type(f.get_window()).__name__)\\n\\\" && git -C /work diff --stat\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "XlBx6Olz8",
-  "content": "Identifier Function 2 Parenthesis\n sqlparse/sql.py | 22 +++++++++++++++++++++-\n 1 file changed, 21 insertions(+), 1 deletion(-)\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "Done. Summary of the fix in `sqlparse/sql.py`:\n\n- Added `Function.get_window()`, which finds the `Over` clause inside the function and returns the token following the `OVER` keyword — an `Identifier` for a named window (`over win1`) or a `Parenthesis` for an inline window spec (`over (PARTITION BY c1)`), or `None` when there is no window.\n- Fixed `Function.get_parameters()` to locate the parameter `Parenthesis` via `token_next_by(i=Parenthesis)` instead of assuming `self.tokens[-1]`, since the last token is now the `Over` clause when a window is present.\n\n`tests.test_grouping.py` (100 tests) and the full suite (450 passed, 3 xfailed) now pass."
+  "content": "All 450 tests pass (including the previously failing `test_grouping_function`).\n\nSummary of the fix in `sqlparse/sql.py`:\n- Added `Function.get_parenthesis()` to locate the function's `Parenthesis` (previously `get_parameters()` blindly used `self.tokens[-1]`, which breaks when an `OVER` clause follows the call).\n- Added `Function.get_window()`, which returns the token following the `OVER` keyword inside the `Over` clause — an `Identifier` for a named window (`foo(5) over win1`) or a `Parenthesis` for an inline window spec (`foo(5) over (PARTITION BY c1)`), and `None` when there is no window."
  }
 ]

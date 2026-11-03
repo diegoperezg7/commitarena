@@ -12,7 +12,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "QyTjFxQkJ",
+    "id": "MzusCwzDn",
     "type": "function",
     "function": {
      "name": "bash",
@@ -20,7 +20,7 @@
     }
    },
    {
-    "id": "x1gXOk07z",
+    "id": "F2Vy7sYIN",
     "type": "function",
     "function": {
      "name": "bash",
@@ -31,12 +31,12 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "QyTjFxQkJ",
+  "tool_call_id": "MzusCwzDn",
   "content": "AGENTS.md\nAUTHORS\nCHANGELOG\nCLAUDE.md\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\nbenchmarks\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\nuv.lock\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\npy.typed\nsql.py\ntokens.py\nutils.py\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "x1gXOk07z",
+  "tool_call_id": "F2Vy7sYIN",
   "content": "\n[exit code 0]"
  },
  {
@@ -44,7 +44,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "hnbmjsRnR",
+    "id": "HKusGYcNF",
     "type": "function",
     "function": {
      "name": "bash",
@@ -52,7 +52,7 @@
     }
    },
    {
-    "id": "tcLW3qyBl",
+    "id": "wbXPA01DB",
     "type": "function",
     "function": {
      "name": "bash",
@@ -63,20 +63,20 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "hnbmjsRnR",
+  "tool_call_id": "HKusGYcNF",
   "content": "86:    (r'(LATERAL\\s+VIEW\\s+)'\n611:    'VIEW': tokens.Keyword,\n963:    'VIEWS': tokens.Keyword,\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "tcLW3qyBl",
-  "content": "<DDL 'CREATE' at 0xFFFF80E84640>\n<Whitespace ' ' at 0xFFFF80E848E0>\n<Identifier 'MATERI...' at 0xFFFF80FD1550>\n<Whitespace ' ' at 0xFFFF80E84C40>\n<Keyword 'VIEW' at 0xFFFF80E84CA0>\n<Whitespace ' ' at 0xFFFF80E84D00>\n<Identifier 'v' at 0xFFFF80FD2050>\n<Whitespace ' ' at 0xFFFF80E84DC0>\n<Keyword 'AS' at 0xFFFF80E84E20>\n<Whitespace ' ' at 0xFFFF80E84E80>\n<DML 'SELECT' at 0xFFFF80E84EE0>\n<Whitespace ' ' at 0xFFFF80E84F40>\n<Integer '1' at 0xFFFF80E84FA0>\n\n[exit code 0]"
+  "tool_call_id": "wbXPA01DB",
+  "content": "<DDL 'CREATE' at 0xFFFFB9E84640>\n<Whitespace ' ' at 0xFFFFB9E848E0>\n<Identifier 'MATERI...' at 0xFFFFB9FD1550>\n<Whitespace ' ' at 0xFFFFB9E84C40>\n<Keyword 'VIEW' at 0xFFFFB9E84CA0>\n<Whitespace ' ' at 0xFFFFB9E84D00>\n<Identifier 'v' at 0xFFFFB9FD2050>\n<Whitespace ' ' at 0xFFFFB9E84DC0>\n<Keyword 'AS' at 0xFFFFB9E84E20>\n<Whitespace ' ' at 0xFFFFB9E84E80>\n<DML 'SELECT' at 0xFFFFB9E84EE0>\n<Whitespace ' ' at 0xFFFFB9E84F40>\n<Integer '1' at 0xFFFFB9E84FA0>\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "DQz6shSto",
+    "id": "hvXUD3cYU",
     "type": "function",
     "function": {
      "name": "bash",
@@ -87,7 +87,7 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "DQz6shSto",
+  "tool_call_id": "hvXUD3cYU",
   "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import tokens\n\n# object() only supports \"is\" and is useful as a marker\n# use this marker to specify that the given regex in SQL_REGEX\n# shall be processed further through a lookup in the KEYWORDS dictionaries\nPROCESS_AS_KEYWORD = object()\n\n\nSQL_REGEX = [\n    (r'(--|# )\\+.*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single.Hint),\n    (r'/\\*\\+[\\s\\S]*?\\*/', tokens.Comment.Multiline.Hint),\n\n    (r'(--|# ).*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single),\n    (r'/\\*[\\s\\S]*?\\*/', tokens.Comment.Multiline),\n\n    (r'(\\r\\n|\\r|\\n)', tokens.Newline),\n    (r'\\s+?', tokens.Whitespace),\n\n    (r':=', tokens.Assignment),\n    (r'::', tokens.Punctuation),\n\n    (r'\\*', tokens.Wildcard),\n\n    (r\"`(``|[^`])*`\", tokens.Name),\n    (r\"´(´´|[^´])*´\", tokens.Name),\n    (r'((?<![\\w\\\"\\$])\\$(?:[_A-ZÀ-Ü]\\w*)?\\$)[\\s\\S]*?\\1', tokens.Literal),\n\n    (r'\\?', tokens.Name.Placeholder),\n    (r'%(\\(\\w+\\))?s', tokens.Name.Placeholder),\n    (r'(?<!\\w)[$:?]\\w+', tokens.Name.Placeholder),\n\n    (r'\\\\\\w+', tokens.Command),\n\n    # FIXME(andi): VALUES shouldn't be listed here\n    # see https://github.com/andialbrecht/sqlparse/pull/64\n    # AS and IN are special, it may be followed by a parenthesis, but\n    # are never functions, see issue183 and issue507\n    (r'(CASE|IN|VALUES|USING|FROM|AS)\\b', tokens.Keyword),\n\n    (r'(@|##|#)[A-ZÀ-Ü]\\w+', tokens.Name),\n\n    # see issue #39\n    # Spaces around period `schema . name` are valid identifier\n    # TODO: Spaces before period not implemented\n    (r'[A-ZÀ-Ü]\\w*(?=\\s*\\.)', tokens.Name),  # 'Name'.\n    # FIXME(atronah): never match,\n    # because `re.match` doesn't work with look-behind regexp feature\n    (r'(?<=\\.)[A-ZÀ-Ü]\\w*', tokens.Name),  # .'Name'\n    (r'[A-ZÀ-Ü]\\w*(?=\\()', tokens.Name),  # side effect: change kw to func\n    (r'-?0x[\\dA-F]+', tokens.Number.Hexadecimal),\n    (r'-?\\d+(\\.\\d+)?E-?\\d+', tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?(\\d+(\\.\\d*)|\\.\\d+)(?![_A-ZÀ-Ü])',\n     tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?\\d+(?![_A-ZÀ-Ü])', tokens.Number.Integer),\n    (r\"'(''|\\\\'|[^'])*'\", tokens.String.Single),\n    # not a real string literal in ANSI SQL:\n    (r'\"(\"\"|\\\\\"|[^\"])*\"', tokens.String.Symbol),\n    (r'(\"\"|\".*?[^\\\\]\")', tokens.String.Symbol),\n    # sqlite names can be escaped with [square brackets]. left bracket\n    # cannot be preceded by word character or a right bracket --\n    # otherwise it's probably an array index\n    (r'(?<![\\w\\])])(\\[[^\\]\\[]+\\])', tokens.Name),\n    (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?'\n     r'|(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b', tokens.Keyword),\n    (r'END(\\s+IF|\\s+LOOP|\\s+WHILE|\\s+FOR|\\s+CASE)?\\b', tokens.Keyword),\n    (r'IF\\s+(NOT\\s+)?EXISTS\\b', tokens.Keyword),\n    (r'NOT\\s+NULL\\b', tokens.Keyword),\n    (r'(ASC|DESC)(\\s+NULLS\\s+(FIRST|LAST))?\\b', tokens.Keyword.Order),\n    (r'(ASC|DESC)\\b', tokens.Keyword.Order),\n    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword.Order),\n    (r'UNION\\s+ALL\\b', tokens.Keyword),\n    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n    (r'DOUBLE\\s+PRECISION\\b', tokens.Name.Builtin),\n    (r'GROUP\\s+BY\\b', tokens.Keyword),\n    (r'ORDER\\s+BY\\b', tokens.Keyword),\n    (r'PRIMARY\\s+KEY\\b', tokens.Keyword),\n    (r'HANDLER\\s+FOR\\b', tokens.Keyword),\n    (r'GO(\\s\\d+)\\b', tokens.Keyword),\n    (r'(LATERAL\\s+VIEW\\s+)'\n     r'(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\\b',\n     tokens.Keyword),\n    (r\"(AT|WITH')\\s+TIME\\s+ZONE\\s+'[^']+'\", tokens.Keyword.TZCast),\n    (r'(NOT\\s+)?(LIKE|ILIKE|RLIKE)\\b', tokens.Operator.Comparison),\n    (r'(NOT\\s+)?(REGEXP)(\\s+(BINARY))?\\b', tokens.Operator.Comparison),\n    # Check for keywords, also returns tokens.Name if regex matches\n    # but the match isn't a keyword.\n    (r'\\w[$#\\w]*', PROCESS_AS_KEYWORD),\n    (r'[;:()\\[\\],\\.]', tokens.Punctuation),\n    # JSON operators\n    (r'(\\->>?|#>>?|@>|<@|\\?\\|?|\\?&|\\-|#\\-)', tokens.Operator),\n    (r'[<>=~!]+', tokens.Operator.Comparison),\n    (r'[+/@#%^&|^-]+', tokens.Operator),\n]\n\nKEYWORDS = {\n    'ABORT': tokens.Keyword,\n    'ABS': tokens.Keyword,\n    'ABSOLUTE': tokens.Keyword,\n    'ACCESS': tokens.Keyword,\n    'ADA': tokens.Keyword,\n    'ADD': tokens.Keyword,\n    'ADMIN': tokens.Keyword,\n    'AFTER': tokens.Keyword,\n    'AGGREGATE': tokens.Keyword,\n    'ALIAS': tokens.Keyword,\n    'ALL': tokens.Keyword,\n    'ALLOCATE': tokens.Keyword,\n    'ANALYSE': tokens.Keyword,\n    'ANALYZE': tokens.Keyword,\n    'ANY': tokens.Keyword,\n    'ARRAYLEN': tokens.Keyword,\n    'ARE': tokens.Keyword,\n    'ASENSITIVE': tokens.Keyword,\n\n[exit code 0]"
  },
  {
@@ -95,102 +95,102 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "yfkpjzQLK",
+    "id": "pW3gMblYh",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && grep -n \\\"MATERIALIZED\\\\|'VIEW'\\\" sqlparse/keywords.py; grep -rn \\\"group_identifier\\\\|def group\\\" sqlparse/filters/*.py | head\"}"
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\np = sqlparse.parse('CREATE MATERIALIZED VIEW v AS SELECT 1')[0]\\nprint(repr(p.tokens[2].value))\\nprint(repr(p.tokens[6].value))\\n\\\" && grep -n \\\"CREATE\\\" /work/sqlparse/keywords.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "yfkpjzQLK",
-  "content": "611:    'VIEW': tokens.Keyword,\n\n[exit code 0]"
+  "tool_call_id": "pW3gMblYh",
+  "content": "'MATERIALIZED'\n'v'\n79:    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n201:    'CREATEDB': tokens.Keyword,\n202:    'CREATEUSER': tokens.Keyword,\n390:    'NOCREATEDB': tokens.Keyword,\n391:    'NOCREATEUSER': tokens.Keyword,\n684:    'CREATE': tokens.Keyword.DDL,\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "nA6e72Xyq",
+    "id": "MoH4qfIpQ",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && ls sqlparse/filters sqlparse/engine && grep -rn \\\"DDL\\\\|Keyword\\\" sqlparse/filters/others.py | head -20\"}"
+     "arguments": "{\"command\": \"ls /work/sqlparse/filters /work/sqlparse/engine && grep -rn \\\"Identifier\\\" /work/sqlparse/filters/*.py | head -30\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "nA6e72Xyq",
-  "content": "sqlparse/engine:\n__init__.py\nfilter_stack.py\ngrouping.py\nstatement_splitter.py\n\nsqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n\n[exit code 0]"
+  "tool_call_id": "MoH4qfIpQ",
+  "content": "/work/sqlparse/engine:\n__init__.py\nfilter_stack.py\ngrouping.py\nstatement_splitter.py\n\n/work/sqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n/work/sqlparse/filters/__init__.py:20:    IdentifierCaseFilter,\n/work/sqlparse/filters/__init__.py:27:    'IdentifierCaseFilter',\n/work/sqlparse/filters/right_margin.py:17:        # sql.TypeCast, sql.Identifier, sql.Alias,\n/work/sqlparse/filters/tokens.py:29:class IdentifierCaseFilter(_CaseFilter):\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "uAkFnPed0",
+    "id": "4j4QBdgcv",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && grep -n \\\"DDL\\\\|Keyword\\\\|Identifier\\\" sqlparse/engine/grouping.py | head -40\"}"
+     "arguments": "{\"command\": \"grep -n \\\"group_\\\" /work/sqlparse/engine/grouping.py | head -60\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "uAkFnPed0",
-  "content": "111:    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n116:        return token.ttype == T.Keyword.TZCast\n124:            or token.match(T.Keyword, 'AS')\n131:    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n174:        sqlcls = sql.SquareBrackets, sql.Identifier\n191:    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n202:        ttypes = T.DML, T.DDL, T.CTE\n208:    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n216:        return token is not None and token.ttype not in (T.Keyword,)\n229:    sqlcls = (sql.Parenthesis, sql.Function, sql.Identifier,\n247:@recurse(sql.Identifier)\n253:        tlist.group_tokens(sql.Identifier, tidx, tidx)\n268:    sqlcls = sql.SquareBrackets, sql.Identifier, sql.Function\n283:    _group(tlist, sql.Identifier, match,\n290:              sql.Identifier, sql.Operation, sql.TypedLiteral)\n298:                T.Keyword,\n311:    m_role = T.Keyword, ('null', 'role')\n312:    sqlcls = (sql.Function, sql.Case, sql.Identifier, sql.Comparison,\n313:              sql.IdentifierList, sql.Operation)\n315:              + (T.Keyword, T.Comment, T.Wildcard))\n327:    _group(tlist, sql.IdentifierList, match,\n363:    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n369:        if isinstance(next_, sql.Identifier):\n370:            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n402:@recurse(sql.Identifier)\n404:    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n405:    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n408:        if imt(prev_, i=sql.Identifier, t=T.Number):\n409:            tlist.group_tokens(sql.Identifier, pidx, tidx)\n411:        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n426:    tidx, token = tlist.token_next_by(m=(T.Keyword, 'VALUES'))\n\n[exit code 0]"
+  "tool_call_id": "4j4QBdgcv",
+  "content": "27:def _group_matching(tlist, cls, depth=0):\n58:            _group_matching(token, cls, depth + 1)\n72:            tlist.group_tokens(cls, open_idx, close_idx)\n76:def group_brackets(tlist):\n77:    _group_matching(tlist, sql.SquareBrackets)\n80:def group_parenthesis(tlist):\n81:    _group_matching(tlist, sql.Parenthesis)\n84:def group_case(tlist):\n85:    _group_matching(tlist, sql.Case)\n88:def group_if(tlist):\n89:    _group_matching(tlist, sql.If)\n92:def group_for(tlist):\n93:    _group_matching(tlist, sql.For)\n96:def group_begin(tlist):\n97:    _group_matching(tlist, sql.Begin)\n100:def group_typecasts(tlist):\n114:def group_tzcasts(tlist):\n134:def group_typed_literal(tlist):\n164:def group_period(tlist):\n194:def group_as(tlist):\n211:def group_assignment(tlist):\n228:def group_comparison(tlist):\n248:def group_identifier(tlist):\n253:        tlist.group_tokens(sql.Identifier, tidx, tidx)\n258:def group_over(tlist):\n263:            tlist.group_tokens(sql.Over, tidx, nidx)\n267:def group_arrays(tlist):\n287:def group_operator(tlist):\n310:def group_identifier_list(tlist):\n332:def group_comments(tlist):\n339:            tlist.group_tokens(sql.Comment, tidx, eidx)\n345:def group_where(tlist):\n357:        tlist.group_tokens(sql.Where, tidx, eidx)\n362:def group_aliased(tlist):\n370:            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n375:def group_functions(tlist):\n398:            tlist.group_tokens(sql.Function, tidx, eidx)\n403:def group_order(tlist):\n409:            tlist.group_tokens(sql.Identifier, pidx, tidx)\n420:            tlist.group_tokens(sql.TokenList, pidx, tidx, extend=True)\n425:def group_values(tlist):\n434:        tlist.group_tokens(sql.Values, start_idx, end_idx, extend=True)\n439:        group_comments,\n441:        # _group_matching\n442:        group_brackets,\n443:        group_parenthesis,\n444:        group_case,\n445:        group_if,\n446:        group_for,\n447:        group_begin,\n449:        group_over,\n450:        group_functions,\n451:        group_where,\n452:        group_period,\n453:        group_arrays,\n454:        group_identifier,\n455:        group_order,\n456:        group_typecasts,\n457:        group_tzcasts,\n458:        group_typed_literal,\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "48eXxWyO9",
+    "id": "4AL2cmREC",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && sed -n 190,230p sqlparse/engine/grouping.py\"}"
+     "arguments": "{\"command\": \"sed -n 240,260p /work/sqlparse/engine/grouping.py; sed -n 360,375p /work/sqlparse/engine/grouping.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "48eXxWyO9",
-  "content": "\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_as(tlist):\n    def match(token):\n        return token.is_keyword and token.normalized == 'AS'\n\n    def valid_prev(token):\n        return token.normalized == 'NULL' or not token.is_keyword\n\n    def valid_next(token):\n        ttypes = T.DML, T.DDL, T.CTE\n        return not imt(token, t=ttypes) and token is not None\n\n    def post(tlist, pidx, tidx, nidx):\n        return pidx, nidx\n\n    _group(tlist, sql.Identifier, match, valid_prev, valid_next, post)\n\n\ndef group_assignment(tlist):\n    def match(token):\n        return token.match(T.Assignment, ':=')\n\n    def valid(token):\n        return token is not None and token.ttype not in (T.Keyword,)\n\n    def post(tlist, pidx, tidx, nidx):\n        m_semicolon = T.Punctuation, ';'\n        snidx, _ = tlist.token_next_by(m=m_semicolon, idx=nidx)\n        nidx = snidx or nidx\n        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Assignment, match, valid_prev, valid_next, post)\n\n\ndef group_comparison(tlist):\n    sqlcls = (sql.Parenthesis, sql.Function, sql.Identifier,\n              sql.Operation, sql.TypedLiteral)\n\n[exit code 0]"
+  "tool_call_id": "4AL2cmREC",
+  "content": "        return pidx, nidx\n\n    valid_prev = valid_next = valid\n    _group(tlist, sql.Comparison, match,\n           valid_prev, valid_next, post, extend=False)\n\n\n@recurse(sql.Identifier)\ndef group_identifier(tlist):\n    ttypes = (T.String.Symbol, T.Name)\n\n    tidx, token = tlist.token_next_by(t=ttypes)\n    while token:\n        tlist.group_tokens(sql.Identifier, tidx, tidx)\n        tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n\n\n@recurse(sql.Over)\ndef group_over(tlist):\n    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\n    while token:\n\n@recurse()\ndef group_aliased(tlist):\n    I_ALIAS = (sql.Parenthesis, sql.Function, sql.Case, sql.Identifier,\n               sql.Operation, sql.Comparison)\n\n    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\n    while token:\n        nidx, next_ = tlist.token_next(tidx)\n        if isinstance(next_, sql.Identifier):\n            tlist.group_tokens(sql.Identifier, tidx, nidx, extend=True)\n        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\n\n\n@recurse(sql.Function)\ndef group_functions(tlist):\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "QMtmRNozX",
+    "id": "mYWNiN91Y",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/keywords.py'\\ns=open(p).read()\\nold=\\\"    (r'CREATE(\\\\\\\\s+OR\\\\\\\\s+REPLACE)?\\\\\\\\b', tokens.Keyword.DDL),\\\\n\\\"\\nnew=old+\\\"    (r'MATERIALIZED\\\\\\\\s+VIEW\\\\\\\\b', tokens.Keyword),\\\\n\\\"\\nassert old in s\\ns=s.replace(old,new,1)\\nopen(p,'w').write(s)\\nEOF\\npython -c \\\"\\nimport sqlparse\\nfrom sqlparse import tokens as T\\np = sqlparse.parse('CREATE MATERIALIZED VIEW v AS SELECT 1')[0]\\nfor t in p.tokens: print(repr(t))\\nprint(p.tokens[2].ttype == T.Keyword)\\nprint(repr(sqlparse.format('create materialized view v as select 1', keyword_case='upper')))\\n\\\"\"}"
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np = 'sqlparse/keywords.py'\\ns = open(p).read()\\nold = \\\"    (r'CREATE(\\\\\\\\s+OR\\\\\\\\s+REPLACE)?\\\\\\\\b', tokens.Keyword.DDL),\\\\n\\\"\\nassert old in s\\nnew = old + \\\"    (r'MATERIALIZED\\\\\\\\s+VIEW\\\\\\\\b', tokens.Keyword),\\\\n\\\"\\ns = s.replace(old, new, 1)\\nopen(p, 'w').write(s)\\nEOF\\npython -c \\\"\\nimport sqlparse\\nfrom sqlparse import tokens as T\\np = sqlparse.parse('CREATE MATERIALIZED VIEW v AS SELECT 1')[0]\\nfor t in p.tokens: print(repr(t))\\nprint(p.tokens[2].ttype == T.Keyword)\\nprint(sqlparse.format('create materialized view v as select 1', keyword_case='upper'))\\n\\\"\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "QMtmRNozX",
-  "content": "<DDL 'CREATE' at 0xFFFF99FE0580>\n<Whitespace ' ' at 0xFFFF99FE0820>\n<Keyword 'MATERI...' at 0xFFFF99FE0AC0>\n<Whitespace ' ' at 0xFFFF99FE0B80>\n<Identifier 'v' at 0xFFFF99FA14D0>\n<Whitespace ' ' at 0xFFFF99FE0C40>\n<Keyword 'AS' at 0xFFFF99FE0CA0>\n<Whitespace ' ' at 0xFFFF99FE0D00>\n<DML 'SELECT' at 0xFFFF99FE0D60>\n<Whitespace ' ' at 0xFFFF99FE0DC0>\n<Integer '1' at 0xFFFF99FE0E20>\nTrue\n'CREATE MATERIALIZED VIEW v AS SELECT 1'\n\n[exit code 0]"
+  "tool_call_id": "mYWNiN91Y",
+  "content": "<DDL 'CREATE' at 0xFFFFB0750580>\n<Whitespace ' ' at 0xFFFFB0750820>\n<Keyword 'MATERI...' at 0xFFFFB0750AC0>\n<Whitespace ' ' at 0xFFFFB0750B80>\n<Identifier 'v' at 0xFFFFB07154D0>\n<Whitespace ' ' at 0xFFFFB0750C40>\n<Keyword 'AS' at 0xFFFFB0750CA0>\n<Whitespace ' ' at 0xFFFFB0750D00>\n<DML 'SELECT' at 0xFFFFB0750D60>\n<Whitespace ' ' at 0xFFFFB0750DC0>\n<Integer '1' at 0xFFFFB0750E20>\nTrue\nCREATE MATERIALIZED VIEW v AS SELECT 1\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "Both assertions pass. Now run the full test suite to check for regressions:",
+  "content": "Both assertions pass. Now let me run the full test suite to check for regressions.",
   "tool_calls": [
    {
-    "id": "ptZFWEsZR",
+    "id": "vldushSJb",
     "type": "function",
     "function": {
      "name": "bash",
@@ -201,11 +201,30 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "ptZFWEsZR",
-  "content": "........................................................................ [ 14%]\n.....x.............x.................................................... [ 29%]\n........................................................................ [ 43%]\n........................................................................ [ 58%]\n........................................................................ [ 73%]\n.....X.................................................................. [ 87%]\n...........................................................              [100%]\n488 passed, 2 xfailed, 1 xpassed in 1.22s\n\n[exit code 0]"
+  "tool_call_id": "vldushSJb",
+  "content": "........................................................................ [ 14%]\n.....x.............x.................................................... [ 29%]\n........................................................................ [ 43%]\n........................................................................ [ 58%]\n........................................................................ [ 73%]\n.....X.................................................................. [ 87%]\n...........................................................              [100%]\n488 passed, 2 xfailed, 1 xpassed in 1.77s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "All 488 tests pass (plus the expected xfail/xpass markers).\n\n**Summary:** Added a lexer rule `(r'MATERIALIZED\\s+VIEW\\b', tokens.Keyword)` in `sqlparse/keywords.py` (right after the `CREATE` DDL rule) so that `MATERIALIZED VIEW` is tokenized as a single `Keyword` token instead of an `Identifier`, fixing `test_materialized_view_issue752` without affecting any other behavior."
+  "content": "All 488 tests pass. Let me verify the xpass wasn't caused by my change:",
+  "tool_calls": [
+   {
+    "id": "os5F56y0D",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/ -rX 2>&1 | grep -i xpass; git stash && python -m pytest -q tests/ 2>&1 | tail -2; git stash pop\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "os5F56y0D",
+  "content": "=================================== XPASSES ====================================\nXPASS tests/test_regressions.py::test_issue484_comments_and_newlines - Needs to be fixed\n488 passed, 2 xfailed, 1 xpassed in 1.50s\nSaved working directory and index state WIP on main: 77110ce task start\nFAILED tests/test_regressions.py::test_materialized_view_issue752 - Assertion...\n1 failed, 487 passed, 2 xfailed, 1 xpassed in 2.04s\nOn branch main\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   sqlparse/keywords.py\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\nDropped refs/stash@{0} (c1a3d25d1555ef007c0007c621a552fe3a1a4a0a)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The xpass is pre-existing (present before my change too), and the only failing test now passes.\n\n**Summary:** Added a lexer rule `(r'MATERIALIZED\\s+VIEW\\b', tokens.Keyword)` in `sqlparse/keywords.py` (right after the `CREATE` rule) so that `MATERIALIZED VIEW` is tokenized as a single `Keyword` token instead of an `Identifier`, making `p.tokens[2].ttype == T.Keyword` and `keyword_case='upper'` formatting work correctly."
  }
 ]

@@ -13,6 +13,10 @@ First release.
   (default 1 USD) is checked before every call. Resumable run directories.
 - `commitarena report`: static HTML report (EN/ES, light/dark, mobile): leaderboard, task x model matrix,
   pass rate before vs after each model's training cutoff, model diff next to the human fix.
-- `commitarena demo`: recorded real run on sqlparse (BSD-3-Clause), no keys or Docker needed.
+- `commitarena demo`: recorded real run of 11 sqlparse (BSD-3-Clause) fixes with Mistral Large 4, Ministral 8B
+  and Codestral, no keys or Docker needed.
+- Agent loop details: older tool outputs are elided to fit a 16K window, exact repeated commands get a
+  notice, truncated outputs say how to read specific lines, commands with a null byte are a failed step,
+  empty or cut-off replies get up to two nudges, `--no-think` for Ollama reasoning models.
 - Python API (`run_task`, `load_tasks`, `ContextFile`, ...) with context-file injection for AGENTS.md /
   CLAUDE.md experiments.

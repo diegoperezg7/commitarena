@@ -1,0 +1,580 @@
+[
+ {
+  "role": "system",
+  "content": "You are a software engineer fixing a bug in a Python repository. The repository is at /work inside a Linux container with no network access (pip install will not work; the dependencies are already installed). Use the `bash` tool to inspect files, edit them (for example with python, sed or a heredoc) and run tests. Each call runs in a fresh shell starting in /work; long outputs are truncated.\n\nWork in small steps: read the failing tests, find the cause in the source code, make a minimal fix, and run the tests. Do not modify test files: they are restored before scoring. When the tests pass, reply with a one-line summary and no tool call to finish."
+ },
+ {
+  "role": "user",
+  "content": "The repository in /work has a bug or a missing behavior. These tests currently fail and must pass after your change:\n\n- tests.test_tokenize::test_parse_order[ASC NULLS FIRST]\n- tests.test_tokenize::test_parse_order[ASC NULLS LAST]\n- tests.test_tokenize::test_parse_order[DESC NULLS FIRST]\n- tests.test_tokenize::test_parse_order[DESC NULLS LAST]\n- tests.test_tokenize::test_parse_order[NULLS FIRST]\n- tests.test_tokenize::test_parse_order[NULLS LAST]\n\nThe tests were written to describe the expected behavior:\n\n```diff\ndiff --git a/tests/test_tokenize.py b/tests/test_tokenize.py\n--- a/tests/test_tokenize.py\n+++ b/tests/test_tokenize.py\n@@ -169,11 +169,16 @@\n     assert p.tokens[0].ttype is T.Keyword\n \n \n-@pytest.mark.parametrize('s', ['NULLS FIRST', 'NULLS LAST'])\n-def test_parse_nulls(s):  # issue487\n-    p = sqlparse.parse(s)[0]\n-    assert len(p.tokens) == 1\n-    assert p.tokens[0].ttype is T.Keyword\n+@pytest.mark.parametrize('s', [\n+    'ASC', 'DESC',\n+    'NULLS FIRST', 'NULLS LAST',\n+    'ASC NULLS FIRST', 'ASC NULLS LAST',\n+    'DESC NULLS FIRST', 'DESC NULLS LAST',\n+])\n+def test_parse_order(s):  # issue487\n+    p = sqlparse.parse(s)[0]\n+    assert len(p.tokens) == 1\n+    assert p.tokens[0].ttype is T.Keyword.Order\n \n \n @pytest.mark.parametrize('s', [\n```\n\nCurrent failure output (truncated):\n\n```\ntests.test_tokenize::test_parse_order[ASC NULLS FIRST]:\nAssertionError: assert 3 == 1\n +  where 3 = len([<Order 'ASC' at 0xFFFF7EA9E800>, <Whitespace ' ' at 0xFFFF7EA9E9E0>, <Keyword 'NULLS ...' at 0xFFFF7EA9E3E0>])\n +    where [<Order 'ASC' at 0xFFFF7EA9E800>, <Whitespace ' ' at 0xFFFF7EA9E9E0>, <Keyword 'NULLS ...' at 0xFFFF7EA9E3E0>] = <Statement 'ASC NU...' at 0xFFFF7EA8D6D0>.tokens\ns = 'ASC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFF7EA9E800>, <Whitespace ' ' at 0xFFFF7EA9E9E0>, <Keywo\n\ntests.test_tokenize::test_parse_order[ASC NULLS LAST]:\nAssertionError: assert 3 == 1\n +  where 3 = len([<Order 'ASC' at 0xFFFF7EA9F8E0>, <Whitespace ' ' at 0xFFFF7EA9E440>, <Keyword 'NULLS ...' at 0xFFFF7EA9EC20>])\n +    where [<Order 'ASC' at 0xFFFF7EA9F8E0>, <Whitespace ' ' at 0xFFFF7EA9E440>, <Keyword 'NULLS ...' at 0xFFFF7EA9EC20>] = <Statement 'ASC NU...' at 0xFFFF7EA8C250>.tokens\ns = 'ASC NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFF7EA9F8E0>, <Whitespace ' ' at 0xFFFF7EA9E440>, <Keywor\n\ntests.test_tokenize::test_parse_order[DESC NULLS FIRST]:\nAssertionError: assert 3 == 1\n +  where 3 = len([<Order 'DESC' at 0xFFFF7EA9F220>, <Whitespace ' ' at 0xFFFF7EA9ECE0>, <Keyword 'NULLS ...' at 0xFFFF7EA9EEC0>])\n +    where [<Order 'DESC' at 0xFFFF7EA9F220>, <Whitespace ' ' at 0xFFFF7EA9ECE0>, <Keyword 'NULLS ...' at 0xFFFF7EA9EEC0>] = <Statement 'DESC N...' at 0xFFFF7EA8D9D0>.tokens\ns = 'DESC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'DESC' at 0xFFFF7EA9F220>, <Whitespace ' ' at 0xFFFF7EA9ECE0>, <K\n```\n\nChange the source code, not the tests: test files are restored before scoring. Do not break the rest of the test suite.\nRun the relevant tests with: python -m pytest -q tests/test_tokenize.py"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "X4uIfUNkM",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"find /work -type f -name \\\"*.py\\\" | grep -v \\\"__pycache__\\\" | grep -E \\\"tokenize|lexer\\\" | head -20\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "X4uIfUNkM",
+  "content": "/work/tests/test_tokenize.py\n/work/sqlparse/lexer.py\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "s6dO1Rdln",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"class.*Order\\\" /work/sqlparse/\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "s6dO1Rdln",
+  "content": "\n[exit code 1]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "CRc3lMvo3",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"T.Order\\\" /work/sqlparse/ | head -10\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "CRc3lMvo3",
+  "content": "\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "4t2ILfl23",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"Order\\\" /work/sqlparse/ | head -20\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "4t2ILfl23",
+  "content": "/work/sqlparse/engine/grouping.py:    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n/work/sqlparse/engine/grouping.py:        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n/work/sqlparse/sql.py:        _, ordering = self.token_next_by(t=T.Keyword.Order)\n/work/sqlparse/keywords.py:    'ASC': tokens.Keyword.Order,\n/work/sqlparse/keywords.py:    'DESC': tokens.Keyword.Order,\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "KzPY7gtxA",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"ttype is T.Keyword\\\" /work/sqlparse/ | head -10\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "KzPY7gtxA",
+  "content": "/work/sqlparse/engine/statement_splitter.py:        if ttype is T.Keyword.DDL and unified.startswith('CREATE'):\n/work/sqlparse/engine/statement_splitter.py:                    or (ttype is T.Keyword and value.split()[0] == 'GO'):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "mj9HAp756",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"class.*Token\\\" /work/sqlparse/ | head -10\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "mj9HAp756",
+  "content": "/work/sqlparse/tokens.py:class _TokenType(tuple):\n/work/sqlparse/sql.py:class Token:\n/work/sqlparse/sql.py:class TokenList(Token):\n/work/sqlparse/sql.py:class Statement(TokenList):\n/work/sqlparse/sql.py:class Identifier(NameAliasMixin, TokenList):\n/work/sqlparse/sql.py:class IdentifierList(TokenList):\n/work/sqlparse/sql.py:class TypedLiteral(TokenList):\n/work/sqlparse/sql.py:class Parenthesis(TokenList):\n/work/sqlparse/sql.py:class SquareBrackets(TokenList):\n/work/sqlparse/sql.py:class Assignment(TokenList):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "VQQ3gZpQd",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"Keyword\\\" /work/sqlparse/tokens.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "VQQ3gZpQd",
+  "content": "Keyword = Token.Keyword\nDML = Keyword.DML\nDDL = Keyword.DDL\nCTE = Keyword.CTE\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "OXe0EQF5J",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 10 -B 5 \\\"class Keyword\\\" /work/sqlparse/tokens.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "OXe0EQF5J",
+  "content": "\n[exit code 1]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "ueKObqdGR",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cat /work/sqlparse/tokens.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ueKObqdGR",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n#\n# The Token implementation is based on pygment's token system written\n# by Georg Brandl.\n# http://pygments.org/\n\n\"\"\"Tokens\"\"\"\n\n\nclass _TokenType(tuple):\n    parent = None\n\n    def __contains__(self, item):\n        return item is not None and (self is item or item[:len(self)] == self)\n\n    def __getattr__(self, name):\n        # don't mess with dunder\n        if name.startswith('__'):\n            return super().__getattr__(self, name)\n        new = _TokenType(self + (name,))\n        setattr(self, name, new)\n        new.parent = self\n        return new\n\n    def __repr__(self):\n        # self can be False only if its the `root` i.e. Token itself\n        return 'Token' + ('.' if self else '') + '.'.join(self)\n\n\nToken = _TokenType()\n\n# Special token types\nText = Token.Text\nWhitespace = Text.Whitespace\nNewline = Whitespace.Newline\nError = Token.Error\n# Text that doesn't belong to this lexer (e.g. HTML in PHP)\nOther = Token.Other\n\n# Common token types for source code\nKeyword = Token.Keyword\nName = Token.Name\nLiteral = Token.Literal\nString = Literal.String\nNumber = Literal.Number\nPunctuation = Token.Punctuation\nOperator = Token.Operator\nComparison = Operator.Comparison\nWildcard = Token.Wildcard\nComment = Token.Comment\nAssignment = Token.Assignment\n\n# Generic types for non-source code\nGeneric = Token.Generic\nCommand = Generic.Command\n\n# String and some others are not direct children of Token.\n# alias them:\nToken.Token = Token\nToken.String = String\nToken.Number = Number\n\n# SQL specific tokens\nDML = Keyword.DML\nDDL = Keyword.DDL\nCTE = Keyword.CTE\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "rEhLjejkh",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"Order\\\" /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "rEhLjejkh",
+  "content": "    'ASC': tokens.Keyword.Order,\n    'DESC': tokens.Keyword.Order,\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "0wyOus8AN",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 5 -B 5 \\\"Order\\\" /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "0wyOus8AN",
+  "content": "    'ANALYSE': tokens.Keyword,\n    'ANALYZE': tokens.Keyword,\n    'ANY': tokens.Keyword,\n    'ARRAYLEN': tokens.Keyword,\n    'ARE': tokens.Keyword,\n    'ASC': tokens.Keyword.Order,\n    'ASENSITIVE': tokens.Keyword,\n    'ASSERTION': tokens.Keyword,\n    'ASSIGNMENT': tokens.Keyword,\n    'ASYMMETRIC': tokens.Keyword,\n    'AT': tokens.Keyword,\n--\n    'DEFINED': tokens.Keyword,\n    'DEFINER': tokens.Keyword,\n    'DELIMITER': tokens.Keyword,\n    'DELIMITERS': tokens.Keyword,\n    'DEREF': tokens.Keyword,\n    'DESC': tokens.Keyword.Order,\n    'DESCRIBE': tokens.Keyword,\n    'DESCRIPTOR': tokens.Keyword,\n    'DESTROY': tokens.Keyword,\n    'DESTRUCTOR': tokens.Keyword,\n    'DETERMINISTIC': tokens.Keyword,\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "UHbI8GOkh",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"NULLS\\\" /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "UHbI8GOkh",
+  "content": "    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "eA4CD7fi6",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 5 -B 5 \\\"NULLS\\\" /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "eA4CD7fi6",
+  "content": "    (r'(?<![\\w\\])])(\\[[^\\]\\[]+\\])', tokens.Name),\n    (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?'\n     r'|(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b', tokens.Keyword),\n    (r'END(\\s+IF|\\s+LOOP|\\s+WHILE)?\\b', tokens.Keyword),\n    (r'NOT\\s+NULL\\b', tokens.Keyword),\n    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n    (r'UNION\\s+ALL\\b', tokens.Keyword),\n    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n    (r'DOUBLE\\s+PRECISION\\b', tokens.Name.Builtin),\n    (r'GROUP\\s+BY\\b', tokens.Keyword),\n    (r'ORDER\\s+BY\\b', tokens.Keyword),\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "88DGAsuPj",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cat /work/sqlparse/keywords.py | grep -n \\\"NULLS\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "88DGAsuPj",
+  "content": "74:    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "OXm5s0MJg",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"cat /work/sqlparse/keywords.py | grep -n \\\"ASC\\\\|DESC\\\"\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "OXm5s0MJg",
+  "content": "117:    'ASC': tokens.Keyword.Order,\n143:    'CASCADE': tokens.Keyword,\n144:    'CASCADED': tokens.Keyword,\n230:    'DESC': tokens.Keyword.Order,\n231:    'DESCRIBE': tokens.Keyword,\n232:    'DESCRIPTOR': tokens.Keyword,\n437:    'PASCAL': tokens.Keyword,\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "XaUbhJ9Nr",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 10 -B 10 \\\"NULLS\\\" /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "XaUbhJ9Nr",
+  "content": "    (r'\"(\"\"|\\\\\"|[^\"])*\"', tokens.String.Symbol),\n    (r'(\"\"|\".*?[^\\\\]\")', tokens.String.Symbol),\n    # sqlite names can be escaped with [square brackets]. left bracket\n    # cannot be preceded by word character or a right bracket --\n    # otherwise it's probably an array index\n    (r'(?<![\\w\\])])(\\[[^\\]\\[]+\\])', tokens.Name),\n    (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?'\n     r'|(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b', tokens.Keyword),\n    (r'END(\\s+IF|\\s+LOOP|\\s+WHILE)?\\b', tokens.Keyword),\n    (r'NOT\\s+NULL\\b', tokens.Keyword),\n    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n    (r'UNION\\s+ALL\\b', tokens.Keyword),\n    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n    (r'DOUBLE\\s+PRECISION\\b', tokens.Name.Builtin),\n    (r'GROUP\\s+BY\\b', tokens.Keyword),\n    (r'ORDER\\s+BY\\b', tokens.Keyword),\n    (r'PRIMARY\\s+KEY\\b', tokens.Keyword),\n    (r'HANDLER\\s+FOR\\b', tokens.Keyword),\n    (r'GO(\\s\\d+)\\b', tokens.Keyword),\n    (r'(LATERAL\\s+VIEW\\s+)'\n     r'(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\\b',\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The issue is that the `NULLS FIRST` and `NULLS LAST` tokens are being parsed as `tokens.Keyword` instead of `tokens.Keyword.Order`. This is causing the test to fail because the test expects a single token of type `T.Keyword.Order` for combined phrases like `ASC NULLS FIRST`.\n\nLet's check the lexer to see how it processes these tokens and ensure that `NULLS FIRST` and `NULLS LAST` are recognized as part of the `Order` token type.",
+  "tool_calls": [
+   {
+    "id": "72QTvJtmC",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -r \\\"token_next_by\\\" /work/sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "72QTvJtmC",
+  "content": "        snidx, _ = tlist.token_next_by(m=m_semicolon, idx=nidx)\n    tidx, token = tlist.token_next_by(t=ttypes)\n        tidx, token = tlist.token_next_by(t=ttypes, idx=tidx)\n    tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN)\n        tidx, token = tlist.token_next_by(m=sql.Over.M_OPEN, idx=tidx)\n    tidx, token = tlist.token_next_by(t=T.Comment)\n        tidx, token = tlist.token_next_by(t=T.Comment, idx=tidx)\n    tidx, token = tlist.token_next_by(m=sql.Where.M_OPEN)\n        eidx, end = tlist.token_next_by(m=sql.Where.M_CLOSE, idx=tidx)\n        tidx, token = tlist.token_next_by(m=sql.Where.M_OPEN, idx=tidx)\n    tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number)\n        tidx, token = tlist.token_next_by(i=I_ALIAS, t=T.Number, idx=tidx)\n    tidx, token = tlist.token_next_by(t=T.Name)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n        tidx, token = tlist.token_next_by(i=sql.Comment, idx=tidx)\n    tidx, token = tlist.token_next_by(m=(T.Keyword, 'VALUES'))\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "KgJNSTe4C",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 10 -B 10 \\\"token_next_by.*Order\\\" /work/sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "KgJNSTe4C",
+  "content": "                eidx = over_idx\n            else:\n                eidx = nidx\n            tlist.group_tokens(sql.Function, tidx, eidx)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n\n\n@recurse(sql.Identifier)\ndef group_order(tlist):\n    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if imt(prev_, i=sql.Identifier, t=T.Number):\n            tlist.group_tokens(sql.Identifier, pidx, tidx)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n\n\n@recurse()\ndef align_comments(tlist):\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if isinstance(prev_, sql.TokenList):\n            tlist.group_tokens(sql.TokenList, pidx, tidx, extend=True)\n            tidx = pidx\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The `group_order` function in `grouping.py` is responsible for grouping `Identifier` and `Order` tokens. However, it only looks for `T.Keyword.Order` tokens, and it does not account for `NULLS FIRST`/`LAST` tokens, which are currently parsed as `T.Keyword`.\n\nWe need to modify the lexer or the grouping logic to ensure that `NULLS FIRST`/`LAST` are also recognized as part of the `Order` token type. Let's check the lexer to see how it processes these tokens.",
+  "tool_calls": [
+   {
+    "id": "BfaneCDDA",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 10 -B 10 \\\"NULLS\\\" /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "BfaneCDDA",
+  "content": "\n[exit code 1]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "fh4GPdY0O",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 5 -B 5 \\\"def token\\\" /work/sqlparse/lexer.py | head -20\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "fh4GPdY0O",
+  "content": "                break\n            else:\n                yield tokens.Error, char\n\n\ndef tokenize(sql, encoding=None):\n    \"\"\"Tokenize sql.\n\n    Tokenize *sql* using the :class:`Lexer` and return a 2-tuple stream\n    of ``(token type, value)`` items.\n    \"\"\"\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "lDGB0zBDL",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -n \\\"def token\\\" /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "lDGB0zBDL",
+  "content": "155:def tokenize(sql, encoding=None):\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "hccwvthZL",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -n \\\"def lex\\\" /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "hccwvthZL",
+  "content": "\n[exit code 1]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "f5qwhs39E",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -n \\\"class Lexer\\\" /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "f5qwhs39E",
+  "content": "23:class Lexer:\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "jJXQG6qfP",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -n '23,100p' /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "jJXQG6qfP",
+  "content": "class Lexer:\n    \"\"\"The Lexer supports configurable syntax.\n    To add support for additional keywords, use the `add_keywords` method.\"\"\"\n\n    _default_instance = None\n    _lock = Lock()\n\n    # Development notes:\n    # - This class is prepared to be able to support additional SQL dialects\n    #   in the future by adding additional functions that take the place of\n    #   the function default_initialization().\n    # - The lexer class uses an explicit singleton behavior with the\n    #   instance-getter method get_default_instance(). This mechanism has\n    #   the advantage that the call signature of the entry-points to the\n    #   sqlparse library are not affected. Also, usage of sqlparse in third\n    #   party code does not need to be adapted. On the other hand, the current\n    #   implementation does not easily allow for multiple SQL dialects to be\n    #   parsed in the same process.\n    #   Such behavior can be supported in the future by passing a\n    #   suitably initialized lexer object as an additional parameter to the\n    #   entry-point functions (such as `parse`). Code will need to be written\n    #   to pass down and utilize such an object. The current implementation\n    #   is prepared to support this thread safe approach without the\n    #   default_instance part needing to change interface.\n\n    @classmethod\n    def get_default_instance(cls):\n        \"\"\"Returns the lexer instance used internally\n        by the sqlparse core functions.\"\"\"\n        with cls._lock:\n            if cls._default_instance is None:\n                cls._default_instance = cls()\n                cls._default_instance.default_initialization()\n        return cls._default_instance\n\n    def default_initialization(self):\n        \"\"\"Initialize the lexer with default dictionaries.\n        Useful if you need to revert custom syntax settings.\"\"\"\n        self.clear()\n        self.set_SQL_REGEX(keywords.SQL_REGEX)\n        self.add_keywords(keywords.KEYWORDS_COMMON)\n        self.add_keywords(keywords.KEYWORDS_ORACLE)\n        self.add_keywords(keywords.KEYWORDS_MYSQL)\n        self.add_keywords(keywords.KEYWORDS_PLPGSQL)\n        self.add_keywords(keywords.KEYWORDS_HQL)\n        self.add_keywords(keywords.KEYWORDS_MSACCESS)\n        self.add_keywords(keywords.KEYWORDS_SNOWFLAKE)\n        self.add_keywords(keywords.KEYWORDS_BIGQUERY)\n        self.add_keywords(keywords.KEYWORDS)\n\n    def clear(self):\n        \"\"\"Clear all syntax configurations.\n        Useful if you want to load a reduced set of syntax configurations.\n        After this call, regexps and keyword dictionaries need to be loaded\n        to make the lexer functional again.\"\"\"\n        self._SQL_REGEX = []\n        self._keywords = []\n\n    def set_SQL_REGEX(self, SQL_REGEX):\n        \"\"\"Set the list of regex that will parse the SQL.\"\"\"\n        FLAGS = re.IGNORECASE | re.UNICODE\n        self._SQL_REGEX = [\n            (re.compile(rx, FLAGS).match, tt)\n            for rx, tt in SQL_REGEX\n        ]\n\n    def add_keywords(self, keywords):\n        \"\"\"Add keyword dictionaries. Keywords are looked up in the same order\n        that dictionaries were added.\"\"\"\n        self._keywords.append(keywords)\n\n    def is_keyword(self, value):\n        \"\"\"Checks for a keyword.\n\n        If the given value is in one of the KEYWORDS_* dictionary\n        it's considered a keyword. Otherwise, tokens.Name is returned.\n        \"\"\"\n        val = value.upper()\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "DZZ4T5rGa",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -n '100,200p' /work/sqlparse/lexer.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "DZZ4T5rGa",
+  "content": "        val = value.upper()\n        for kwdict in self._keywords:\n            if val in kwdict:\n                return kwdict[val], value\n        else:\n            return tokens.Name, value\n\n    def get_tokens(self, text, encoding=None):\n        \"\"\"\n        Return an iterable of (tokentype, value) pairs generated from\n        `text`. If `unfiltered` is set to `True`, the filtering mechanism\n        is bypassed even if filters are defined.\n\n        Also preprocess the text, i.e. expand tabs and strip it if\n        wanted and applies registered filters.\n\n        Split ``text`` into (tokentype, text) pairs.\n\n        ``stack`` is the initial stack (default: ``['root']``)\n        \"\"\"\n        if isinstance(text, TextIOBase):\n            text = text.read()\n\n        if isinstance(text, str):\n            pass\n        elif isinstance(text, bytes):\n            if encoding:\n                text = text.decode(encoding)\n            else:\n                try:\n                    text = text.decode('utf-8')\n                except UnicodeDecodeError:\n                    text = text.decode('unicode-escape')\n        else:\n            raise TypeError(\"Expected text or file-like object, got {!r}\".\n                            format(type(text)))\n\n        iterable = enumerate(text)\n        for pos, char in iterable:\n            for rexmatch, action in self._SQL_REGEX:\n                m = rexmatch(text, pos)\n\n                if not m:\n                    continue\n                elif isinstance(action, tokens._TokenType):\n                    yield action, m.group()\n                elif action is keywords.PROCESS_AS_KEYWORD:\n                    yield self.is_keyword(m.group())\n\n                consume(iterable, m.end() - pos - 1)\n                break\n            else:\n                yield tokens.Error, char\n\n\ndef tokenize(sql, encoding=None):\n    \"\"\"Tokenize sql.\n\n    Tokenize *sql* using the :class:`Lexer` and return a 2-tuple stream\n    of ``(token type, value)`` items.\n    \"\"\"\n    return Lexer.get_default_instance().get_tokens(sql, encoding)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "The issue is that the `NULLS FIRST` and `NULLS LAST` tokens are defined in the regex pattern as `tokens.Keyword` but should be treated as `tokens.Keyword.Order` to match the expected behavior in the tests.\n\nLet's modify the regex pattern in `keywords.py` to ensure that `NULLS FIRST` and `NULLS LAST` are recognized as `tokens.Keyword.Order`.",
+  "tool_calls": [
+   {
+    "id": "ihbwMkjdA",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -i 's/(r\\\"NULLS\\\\s+(FIRST|LAST)\\\\b\\\", tokens.Keyword)/(r\\\"NULLS\\\\s+(FIRST|LAST)\\\\b\\\", tokens.Keyword.Order)/' /work/sqlparse/keywords.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "ihbwMkjdA",
+  "content": "\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "VbOnMZ8aR",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"python -m pytest -q tests/test_tokenize.py::test_parse_order\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "VbOnMZ8aR",
+  "content": "..FFFFFF                                                                 [100%]\n=================================== FAILURES ===================================\n________________________ test_parse_order[NULLS FIRST] _________________________\n\ns = 'NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n        assert len(p.tokens) == 1\n>       assert p.tokens[0].ttype is T.Keyword.Order\nE       AssertionError: assert Token.Keyword is Token.Keyword.Order\nE        +  where Token.Keyword = <Keyword 'NULLS ...' at 0xFFFFB5A6C2E0>.ttype\nE        +  and   Token.Keyword.Order = Token.Keyword.Order\nE        +    where Token.Keyword = T.Keyword\n\ntests/test_tokenize.py:181: AssertionError\n_________________________ test_parse_order[NULLS LAST] _________________________\n\ns = 'NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n        assert len(p.tokens) == 1\n>       assert p.tokens[0].ttype is T.Keyword.Order\nE       AssertionError: assert Token.Keyword is Token.Keyword.Order\nE        +  where Token.Keyword = <Keyword 'NULLS ...' at 0xFFFFB5A73A60>.ttype\nE        +  and   Token.Keyword.Order = Token.Keyword.Order\nE        +    where Token.Keyword = T.Keyword\n\ntests/test_tokenize.py:181: AssertionError\n______________________ test_parse_order[ASC NULLS FIRST] _______________________\n\ns = 'ASC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFFB5A6F1C0>, <Whitespace ' ' at 0xFFFFB5A6C3A0>, <Keyword 'NULLS ...' at 0xFFFFB5A6F0A0>])\nE        +    where [<Order 'ASC' at 0xFFFFB5A6F1C0>, <Whitespace ' ' at 0xFFFFB5A6C3A0>, <Keyword 'NULLS ...' at 0xFFFFB5A6F0A0>] = <Statement 'ASC NU...' at 0xFFFFB583F2D0>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n_______________________ test_parse_order[ASC NULLS LAST] _______________________\n\ns = 'ASC NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFFB5A6F2E0>, <Whitespace ' ' at 0xFFFFB5A6F280>, <Keyword 'NULLS ...' at 0xFFFFB5A6F460>])\nE        +    where [<Order 'ASC' at 0xFFFFB5A6F2E0>, <Whitespace ' ' at 0xFFFFB5A6F280>, <Keyword 'NULLS ...' at 0xFFFFB5A6F460>] = <Statement 'ASC NU...' at 0xFFFFB583D2D0>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n______________________ test_parse_order[DESC NULLS FIRST] ______________________\n\ns = 'DESC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'DESC' at 0xFFFFB5A6F100>, <Whitespace ' ' at 0xFFFFB5A6F6A0>, <Keyword 'NULLS ...' at 0xFFFFB5A6F5E0>])\nE        +    where [<Order 'DESC' at 0xFFFFB5A6F100>, <Whitespace ' ' at 0xFFFFB5A6F6A0>, <Keyword 'NULLS ...' at 0xFFFFB5A6F5E0>] = <Statement 'DESC N...' at 0xFFFFB583D750>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n______________________ test_parse_order[DESC NULLS LAST] _______________________\n\ns = 'DESC NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'DESC' at 0xFFFFB5A6F940>, <Whitespace ' ' at 0xFFFFB5A6F880>, <Keyword 'NULLS ...' at 0xFFFFB5A6F8E0>])\nE        +    where [<Order 'DESC' at 0xFFFFB5A6F940>, <Whitespace ' ' at 0xFFFFB5A6F880>, <Keyword 'NULLS ...' at 0xFFFFB5A6F8E0>] = <Statement 'DESC N...' at 0xFFFFB583DA50>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_tokenize.py::test_parse_order[NULLS FIRST] - AssertionError...\nFAILED tests/test_tokenize.py::test_parse_order[NULLS LAST] - AssertionError:...\nFAILED tests/test_tokenize.py::test_parse_order[ASC NULLS FIRST] - AssertionE...\nFAILED tests/test_tokenize.py::test_parse_order[ASC NULLS LAST] - AssertionEr...\nFAILED tests/test_tokenize.py::test_parse_order[DESC NULLS FIRST] - Assertion...\nFAILED tests/test_tokenize.py::test_parse_order[DESC NULLS LAST] - AssertionE...\n6 failed, 2 passed in 0.09s\n\n[exit code 1]"
+ },
+ {
+  "role": "assistant",
+  "content": "The regex change did not fully address the issue. The `NULLS FIRST` and `NULLS LAST` tokens are still not being grouped with `ASC`/`DESC` tokens as a single `Order` token. We need to ensure that the lexer and grouping logic recognize `NULLS FIRST`/`LAST` as part of the `Order` token type and group them together.\n\nLet's modify the `group_order` function in `grouping.py` to handle `NULLS FIRST`/`LAST` tokens as part of the `Order` token type.",
+  "tool_calls": [
+   {
+    "id": "po4rxAcR4",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"grep -A 15 -B 5 \\\"def group_order\\\" /work/sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "po4rxAcR4",
+  "content": "            tlist.group_tokens(sql.Function, tidx, eidx)\n        tidx, token = tlist.token_next_by(t=T.Name, idx=tidx)\n\n\n@recurse(sql.Identifier)\ndef group_order(tlist):\n    \"\"\"Group together Identifier and Asc/Desc token\"\"\"\n    tidx, token = tlist.token_next_by(t=T.Keyword.Order)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n        if imt(prev_, i=sql.Identifier, t=T.Number):\n            tlist.group_tokens(sql.Identifier, pidx, tidx)\n            tidx = pidx\n        tidx, token = tlist.token_next_by(t=T.Keyword.Order, idx=tidx)\n\n\n@recurse()\ndef align_comments(tlist):\n    tidx, token = tlist.token_next_by(i=sql.Comment)\n    while token:\n        pidx, prev_ = tlist.token_prev(tidx)\n\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "We need to modify the `group_order` function to also include `NULLS FIRST`/`LAST` tokens as part of the `Order` token type. Let's update the function to handle these cases.",
+  "tool_calls": [
+   {
+    "id": "FeULEGCJY",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"sed -i 's/token_next_by(t=T.Keyword.Order)/token_next_by(t=T.Keyword.Order, m=(T.Keyword, r\\\"NULLS\\\\s+(FIRST|LAST)\\\"))/' /work/sqlparse/engine/grouping.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "FeULEGCJY",
+  "content": "\n[exit code 0]"
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "YGaGJ2gYv",
+    "type": "function",
+    "function": {
+     "name": "bash",
+     "arguments": "{\"command\": \"python -m pytest -q tests/test_tokenize.py::test_parse_order\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "YGaGJ2gYv",
+  "content": "..FFFFFF                                                                 [100%]\n=================================== FAILURES ===================================\n________________________ test_parse_order[NULLS FIRST] _________________________\n\ns = 'NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n        assert len(p.tokens) == 1\n>       assert p.tokens[0].ttype is T.Keyword.Order\nE       AssertionError: assert Token.Keyword is Token.Keyword.Order\nE        +  where Token.Keyword = <Keyword 'NULLS ...' at 0xFFFFAD0D8580>.ttype\nE        +  and   Token.Keyword.Order = Token.Keyword.Order\nE        +    where Token.Keyword = T.Keyword\n\ntests/test_tokenize.py:181: AssertionError\n_________________________ test_parse_order[NULLS LAST] _________________________\n\ns = 'NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n        assert len(p.tokens) == 1\n>       assert p.tokens[0].ttype is T.Keyword.Order\nE       AssertionError: assert Token.Keyword is Token.Keyword.Order\nE        +  where Token.Keyword = <Keyword 'NULLS ...' at 0xFFFFAD0D8640>.ttype\nE        +  and   Token.Keyword.Order = Token.Keyword.Order\nE        +    where Token.Keyword = T.Keyword\n\ntests/test_tokenize.py:181: AssertionError\n______________________ test_parse_order[ASC NULLS FIRST] _______________________\n\ns = 'ASC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFFAD0DB520>, <Whitespace ' ' at 0xFFFFAD0D8520>, <Keyword 'NULLS ...' at 0xFFFFAD0DB400>])\nE        +    where [<Order 'ASC' at 0xFFFFAD0DB520>, <Whitespace ' ' at 0xFFFFAD0D8520>, <Keyword 'NULLS ...' at 0xFFFFAD0DB400>] = <Statement 'ASC NU...' at 0xFFFFACEBF2D0>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n_______________________ test_parse_order[ASC NULLS LAST] _______________________\n\ns = 'ASC NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'ASC' at 0xFFFFAD0DB640>, <Whitespace ' ' at 0xFFFFAD0DB5E0>, <Keyword 'NULLS ...' at 0xFFFFAD0DB7C0>])\nE        +    where [<Order 'ASC' at 0xFFFFAD0DB640>, <Whitespace ' ' at 0xFFFFAD0DB5E0>, <Keyword 'NULLS ...' at 0xFFFFAD0DB7C0>] = <Statement 'ASC NU...' at 0xFFFFACEBD2D0>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n______________________ test_parse_order[DESC NULLS FIRST] ______________________\n\ns = 'DESC NULLS FIRST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'DESC' at 0xFFFFAD0DB460>, <Whitespace ' ' at 0xFFFFAD0DBA00>, <Keyword 'NULLS ...' at 0xFFFFAD0DB940>])\nE        +    where [<Order 'DESC' at 0xFFFFAD0DB460>, <Whitespace ' ' at 0xFFFFAD0DBA00>, <Keyword 'NULLS ...' at 0xFFFFAD0DB940>] = <Statement 'DESC N...' at 0xFFFFACEBD750>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n______________________ test_parse_order[DESC NULLS LAST] _______________________\n\ns = 'DESC NULLS LAST'\n\n    @pytest.mark.parametrize('s', [\n        'ASC', 'DESC',\n        'NULLS FIRST', 'NULLS LAST',\n        'ASC NULLS FIRST', 'ASC NULLS LAST',\n        'DESC NULLS FIRST', 'DESC NULLS LAST',\n    ])\n    def test_parse_order(s):  # issue487\n        p = sqlparse.parse(s)[0]\n>       assert len(p.tokens) == 1\nE       AssertionError: assert 3 == 1\nE        +  where 3 = len([<Order 'DESC' at 0xFFFFAD0DBDC0>, <Whitespace ' ' at 0xFFFFAD0DBBE0>, <Keyword 'NULLS ...' at 0xFFFFAD0DBC40>])\nE        +    where [<Order 'DESC' at 0xFFFFAD0DBDC0>, <Whitespace ' ' at 0xFFFFAD0DBBE0>, <Keyword 'NULLS ...' at 0xFFFFAD0DBC40>] = <Statement 'DESC N...' at 0xFFFFACEBDA50>.tokens\n\ntests/test_tokenize.py:180: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_tokenize.py::test_parse_order[NULLS FIRST] - AssertionError...\nFAILED tests/test_tokenize.py::test_parse_order[NULLS LAST] - AssertionError:...\nFAILED tests/test_tokenize.py::test_parse_order[ASC NULLS FIRST] - AssertionE...\nFAILED tests/test_tokenize.py::test_parse_order[ASC NULLS LAST] - AssertionEr...\nFAILED tests/test_tokenize.py::test_parse_order[DESC NULLS FIRST] - Assertion...\nFAILED tests/test_tokenize.py::test_parse_order[DESC NULLS LAST] - AssertionE...\n6 failed, 2 passed in 0.05s\n\n[exit code 1]"
+ }
+]

@@ -15,16 +15,16 @@ TRAJ = ROOT / "docs" / "demo-run" / "trajectories"
 
 
 NOTE_EN = (
-    "Same harness, limits and sandbox for every model (30 model calls, 1800 s per attempt, 4096 tokens per reply). "
-    "mistral-small-latest was also planned but the API answered 429 for the whole session, so it is not shown. "
-    "ollama/qwen3:4b-16k ran on 3 of the 11 tasks: in all 3 it spent every reply's 4096 tokens thinking and never "
-    "called the tool (16 to 21 minutes per task on a shared laptop), so the run was stopped there."
+    "Same harness, limits and sandbox for every model: 30 model calls and 1800 s per attempt, 4096 tokens per "
+    "reply, temperature 0. Codestral repeated an earlier command verbatim in 170 of its 304 tool calls, despite "
+    "163 repeat notices from the harness, and ran out of steps in 9 of 11 attempts; it never edited a test file. "
+    "Full trajectories: github.com/diegoperezg7/commitarena/tree/main/docs/demo-run/trajectories"
 )
 NOTE_ES = (
-    "Mismo arnés, límites y sandbox para todos los modelos (30 llamadas, 1800 s por intento, 4096 tokens por respuesta). "
-    "También estaba previsto mistral-small-latest, pero la API respondió 429 toda la sesión y no aparece. "
-    "ollama/qwen3:4b-16k corrió 3 de las 11 tareas: en las 3 gastó los 4096 tokens de cada respuesta pensando y nunca "
-    "llamó a la herramienta (de 16 a 21 minutos por tarea en un portátil compartido), así que la ejecución se paró ahí."
+    "Mismo arnés, límites y sandbox para todos: 30 llamadas y 1800 s por intento, 4096 tokens por respuesta, "
+    "temperatura 0. Codestral repitió literalmente un comando anterior en 170 de sus 304 llamadas, pese a 163 "
+    "avisos de repetición del arnés, y agotó los pasos en 9 de 11 intentos; no tocó ningún test. "
+    "Trayectorias completas: github.com/diegoperezg7/commitarena/tree/main/docs/demo-run/trajectories"
 )
 
 

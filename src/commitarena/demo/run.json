@@ -1,20 +1,23 @@
 {
  "tool": "commitarena",
  "version": "0.1.0",
- "updated_at": "2026-11-03T17:33:41+00:00",
+ "updated_at": "2026-11-03T18:00:11+00:00",
  "hardware": "Darwin arm64 (Apple M4, 16 GB RAM)",
  "models": [
   "mistral/codestral-latest",
-  "mistral/mistral-large-4",
-  "ollama/qwen3:4b-16k"
+  "mistral/ministral-8b-latest",
+  "mistral/mistral-large-4"
  ],
- "cutoffs": {
-  "mistral/mistral-large-4": "2026-10-01",
-  "mistral/codestral-latest": "2025-07-31",
-  "mistral/mistral-small-latest": "2026-03-01",
-  "ollama/qwen3:4b-16k": "2025-04-29"
+ "cutoffs": {},
+ "agent": {
+  "max_steps": 30,
+  "max_wall_time": 1800,
+  "max_output_chars": 6000,
+  "max_tokens": 4096,
+  "temperature": 0.0,
+  "max_context_chars": 40000,
+  "think": null
  },
- "max_steps": 30,
  "sandbox": {
   "cpus": 2.0,
   "memory": "2g",
@@ -24,10 +27,10 @@
  },
  "context_file": null,
  "strip_context_files": false,
- "created_at": "2026-11-03T16:42:47+00:00",
+ "created_at": "2026-11-03T18:00:11+00:00",
  "recorded": true,
  "repo": "https://github.com/andialbrecht/sqlparse",
  "repo_license": "BSD-3-Clause",
- "note_en": "Same harness, limits and sandbox for every model (30 model calls, 1800 s per attempt, 4096 tokens per reply). mistral-small-latest was also planned but the API answered 429 for the whole session, so it is not shown. ollama/qwen3:4b-16k ran on 3 of the 11 tasks: in all 3 it spent every reply's 4096 tokens thinking and never called the tool (16 to 21 minutes per task on a shared laptop), so the run was stopped there.",
- "note_es": "Mismo arn\u00e9s, l\u00edmites y sandbox para todos los modelos (30 llamadas, 1800 s por intento, 4096 tokens por respuesta). Tambi\u00e9n estaba previsto mistral-small-latest, pero la API respondi\u00f3 429 toda la sesi\u00f3n y no aparece. ollama/qwen3:4b-16k corri\u00f3 3 de las 11 tareas: en las 3 gast\u00f3 los 4096 tokens de cada respuesta pensando y nunca llam\u00f3 a la herramienta (de 16 a 21 minutos por tarea en un port\u00e1til compartido), as\u00ed que la ejecuci\u00f3n se par\u00f3 ah\u00ed."
+ "note_en": "Same harness, limits and sandbox for every model: 30 model calls and 1800 s per attempt, 4096 tokens per reply, temperature 0. Codestral repeated an earlier command verbatim in 170 of its 304 tool calls, despite 163 repeat notices from the harness, and ran out of steps in 9 of 11 attempts; it never edited a test file. Full trajectories: github.com/diegoperezg7/commitarena/tree/main/docs/demo-run/trajectories",
+ "note_es": "Mismo arn\u00e9s, l\u00edmites y sandbox para todos: 30 llamadas y 1800 s por intento, 4096 tokens por respuesta, temperatura 0. Codestral repiti\u00f3 literalmente un comando anterior en 170 de sus 304 llamadas, pese a 163 avisos de repetici\u00f3n del arn\u00e9s, y agot\u00f3 los pasos en 9 de 11 intentos; no toc\u00f3 ning\u00fan test. Trayectorias completas: github.com/diegoperezg7/commitarena/tree/main/docs/demo-run/trajectories"
 }

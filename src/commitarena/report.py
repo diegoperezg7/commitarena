@@ -37,7 +37,7 @@ def leaderboard(results: list[dict], cutoffs: dict[str, str]) -> list[dict]:
         m = rows.setdefault(
             r["model"],
             {"model": r["model"], "passed": 0, "total": 0, "cost": 0.0, "tokens": 0, "time": 0.0, "steps": 0,
-             "before": _split(), "after": _split(), "cutoff": cutoffs.get(r["model"])},
+             "before": _split(), "after": _split(), "cutoff": cutoffs.get(r["model"]), "stops": {}},
         )  # fmt: skip
         m["total"] += 1
         m["passed"] += int(bool(r["passed"]))
@@ -45,6 +45,8 @@ def leaderboard(results: list[dict], cutoffs: dict[str, str]) -> list[dict]:
         m["tokens"] += r.get("tokens_in", 0) + r.get("tokens_out", 0)
         m["time"] += r.get("wall_time_s", 0.0)
         m["steps"] += r.get("steps", 0)
+        stop = r.get("stop_reason") or "unknown"
+        m["stops"][stop] = m["stops"].get(stop, 0) + 1
         cut = cutoffs.get(r["model"])
         if cut and r.get("task_date"):
             side = "before" if r["task_date"][:10] < cut else "after"

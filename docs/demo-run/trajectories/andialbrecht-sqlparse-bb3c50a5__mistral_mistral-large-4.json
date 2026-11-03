@@ -12,15 +12,15 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "6pXxH6CQy",
+    "id": "kfCON7L5M",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"find /work -name \\\"*.py\\\" | grep -i -E \\\"php|format\\\" | head -20 && echo --- && ls /work\"}"
+     "arguments": "{\"command\": \"find /work -name \\\"*.py\\\" | grep -i -E \\\"format|php\\\" | head -20 && echo --- && ls /work\"}"
     }
    },
    {
-    "id": "LG0qznPbY",
+    "id": "2a1vfGYHv",
     "type": "function",
     "function": {
      "name": "bash",
@@ -31,12 +31,12 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "6pXxH6CQy",
+  "tool_call_id": "kfCON7L5M",
   "content": "/work/tests/test_format.py\n/work/sqlparse/formatter.py\n---\nAGENTS.md\nAUTHORS\nCHANGELOG\nCLAUDE.md\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.md\nSECURITY.md\nTODO\nbenchmarks\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\nuv.lock\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "LG0qznPbY",
+  "tool_call_id": "2a1vfGYHv",
   "content": "/work/sqlparse/cli.py:85:        choices=['python', 'php'],\n/work/sqlparse/cli.py:87:             'choices are \"python\", \"php\"')\n/work/sqlparse/formatter.py:27:    if ofrmt not in [None, 'sql', 'python', 'php']:\n/work/sqlparse/formatter.py:195:        if frmt.lower() == 'php':\n\n[exit code 0]"
  },
  {
@@ -44,7 +44,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "Ldndi1oKq",
+    "id": "mCbjODsPL",
     "type": "function",
     "function": {
      "name": "bash",
@@ -55,7 +55,7 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "Ldndi1oKq",
+  "tool_call_id": "mCbjODsPL",
   "content": "        stack.preprocess.append(\n            filters.IdentifierCaseFilter(options['identifier_case']))\n\n    if options.get('truncate_strings'):\n        stack.preprocess.append(filters.TruncateStringFilter(\n            width=options['truncate_strings'], char=options['truncate_char']))\n\n    if options.get('use_space_around_operators', False):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.SpacesAroundOperatorsFilter())\n\n    # After grouping\n    if options.get('strip_comments'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.StripCommentsFilter())\n\n    if options.get('strip_whitespace') or options.get('reindent'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(filters.StripWhitespaceFilter())\n\n    if options.get('reindent'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.ReindentFilter(\n                char=options['indent_char'],\n                width=options['indent_width'],\n                indent_after_first=options['indent_after_first'],\n                indent_columns=options['indent_columns'],\n                wrap_after=options['wrap_after'],\n                comma_first=options['comma_first'],\n                compact=options['compact'],))\n\n    if options.get('reindent_aligned', False):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.AlignedIndentFilter(char=options['indent_char']))\n\n    if options.get('right_margin'):\n        stack.enable_grouping()\n        stack.stmtprocess.append(\n            filters.RightMarginFilter(width=options['right_margin']))\n\n    # Serializer\n    if options.get('output_format'):\n        frmt = options['output_format']\n        if frmt.lower() == 'php':\n            fltr = filters.OutputPHPFilter()\n        elif frmt.lower() == 'python':\n            fltr = filters.OutputPythonFilter()\n        else:\n            fltr = None\n        if fltr is not None:\n            stack.postprocess.append(fltr)\n\n    return stack\n\n[exit code 0]"
  },
  {
@@ -63,18 +63,18 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "c7c1eEW7n",
+    "id": "oxpHpB1vt",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -n \\\"class OutputPHPFilter\\\" -A 60 /work/sqlparse/filters.py\"}"
+     "arguments": "{\"command\": \"grep -n \\\"class OutputPHPFilter\\\" -A 40 /work/sqlparse/filters.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "c7c1eEW7n",
+  "tool_call_id": "oxpHpB1vt",
   "content": "grep: /work/sqlparse/filters.py: No such file or directory\n\n[exit code 2]"
  },
  {
@@ -82,7 +82,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "3MMrZWrNo",
+    "id": "NpG9F59nT",
     "type": "function",
     "function": {
      "name": "bash",
@@ -93,7 +93,7 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "3MMrZWrNo",
+  "tool_call_id": "NpG9F59nT",
   "content": "/work/sqlparse:\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\npy.typed\nsql.py\ntokens.py\nutils.py\n\n/work/sqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n/work/sqlparse/filters/output.py:80:class OutputPHPFilter(OutputFilter):\n/work/sqlparse/filters/__init__.py:16:from sqlparse.filters.output import OutputPHPFilter, OutputPythonFilter\n/work/sqlparse/filters/__init__.py:29:    'OutputPHPFilter',\n/work/sqlparse/formatter.py:196:            fltr = filters.OutputPHPFilter()\n\n[exit code 0]"
  },
  {
@@ -101,7 +101,7 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "hI0vyoPu4",
+    "id": "zPJPS5TCQ",
     "type": "function",
     "function": {
      "name": "bash",
@@ -112,7 +112,7 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "hI0vyoPu4",
+  "tool_call_id": "zPJPS5TCQ",
   "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import sql\nfrom sqlparse import tokens as T\n\n\nclass OutputFilter:\n    varname_prefix = ''\n\n    def __init__(self, varname='sql'):\n        self.varname = self.varname_prefix + varname\n        self.count = 0\n\n    def _process(self, stream, varname, has_nl):\n        raise NotImplementedError\n\n    def process(self, stmt):\n        self.count += 1\n        if self.count > 1:\n            varname = f'{self.varname}{self.count}'\n        else:\n            varname = self.varname\n\n        has_nl = len(str(stmt).strip().splitlines()) > 1\n        stmt.tokens = self._process(stmt.tokens, varname, has_nl)\n        return stmt\n\n\nclass OutputPythonFilter(OutputFilter):\n    def _process(self, stream, varname, has_nl):\n        # SQL query assignation to varname\n        if self.count > 1:\n            yield sql.Token(T.Whitespace, '\\n')\n        yield sql.Token(T.Name, varname)\n        yield sql.Token(T.Whitespace, ' ')\n        yield sql.Token(T.Operator, '=')\n        yield sql.Token(T.Whitespace, ' ')\n        if has_nl:\n            yield sql.Token(T.Operator, '(')\n        yield sql.Token(T.Text, \"'\")\n\n        # Print the tokens on the quote\n        for token in stream:\n            # Token is a new line separator\n            if token.is_whitespace and '\\n' in token.value:\n                # Close quote and add a new line\n                yield sql.Token(T.Text, \" '\")\n                yield sql.Token(T.Whitespace, '\\n')\n\n                # Quote header on secondary lines\n                yield sql.Token(T.Whitespace, ' ' * (len(varname) + 4))\n                yield sql.Token(T.Text, \"'\")\n\n                # Indentation\n                after_lb = token.value.split('\\n', 1)[1]\n                if after_lb:\n                    yield sql.Token(T.Whitespace, after_lb)\n                continue\n\n            # Escape backslashes before quotes so a backslash preceding a\n            # quote cannot break out of the generated string literal\n            # (GHSA-3496-9g83-7v6x).\n            else:\n                token.value = token.value.replace('\\\\', '\\\\\\\\').replace(\"'\", \"\\\\'\")\n\n            # Put the token\n            yield sql.Token(T.Text, token.value)\n\n        # Close quote\n        yield sql.Token(T.Text, \"'\")\n        if has_nl:\n            yield sql.Token(T.Operator, ')')\n\n\nclass OutputPHPFilter(OutputFilter):\n    varname_prefix = '$'\n\n    def _process(self, stream, varname, has_nl):\n        # SQL query assignation to varname (quote header)\n        if self.count > 1:\n            yield sql.Token(T.Whitespace, '\\n')\n        yield sql.Token(T.Name, varname)\n        yield sql.Token(T.Whitespace, ' ')\n        if has_nl:\n            yield sql.Token(T.Whitespace, ' ')\n        yield sql.Token(T.Operator, '=')\n        yield sql.Token(T.Whitespace, ' ')\n        yield sql.Token(T.Text, '\"')\n\n        # Print the tokens on the quote\n        for token in stream:\n            # Token is a new line separator\n            if token.is_whitespace and '\\n' in token.value:\n                # Close quote and add a new line\n                yield sql.Token(T.Text, ' \";')\n                yield sql.Token(T.Whitespace, '\\n')\n\n                # Quote header on secondary lines\n                yield sql.Token(T.Name, varname)\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Operator, '.=')\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Text, '\"')\n\n                # Indentation\n                after_lb = token.value.split('\\n', 1)[1]\n                if after_lb:\n                    yield sql.Token(T.Whitespace, after_lb)\n                continue\n\n            # Escape backslashes before quotes so a backslash preceding a\n            # quote cannot break out of the generated string literal\n            # (GHSA-3496-9g83-7v6x).\n            else:\n                token.value = token.value.replace('\\\\', '\\\\\\\\').replace('\"', '\\\\\"')\n\n            # Put the token\n            yield sql.Token(T.Text, token.value)\n\n        # Close quote\n        yield sql.Token(T.Text, '\"')\n        yield sql.Token(T.Punctuation, ';')\n\n[exit code 0]"
  },
  {
@@ -120,45 +120,45 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "P7HT03m3K",
+    "id": "EZBEf2Hwm",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/filters/output.py'\\ns=open(p).read()\\nold = \\\"\\\"\\\"            # Escape backslashes before quotes so a backslash preceding a\\n            # quote cannot break out of the generated string literal\\n            # (GHSA-3496-9g83-7v6x).\\n            else:\\n                token.value = token.value.replace('\\\\\\\\\\\\\\\\', '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\').replace('\\\"', '\\\\\\\\\\\\\\\\\\\"')\\n\\n            # Put the token\\n            yield sql.Token(T.Text, token.value)\\n\\n        # Close quote\\n        yield sql.Token(T.Text, '\\\"')\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"            # Escape backslashes before quotes so a backslash preceding a\\n            # quote cannot break out of the generated string literal\\n            # (GHSA-3496-9g83-7v6x).\\n            else:\\n                token.value = token.value.replace('\\\\\\\\\\\\\\\\', '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\').replace('\\\"', '\\\\\\\\\\\\\\\\\\\"')\\n\\n            # Escape dollar signs: in PHP double-quoted strings \\\"$\\\" starts\\n            # variable or expression interpolation, so it must be escaped\\n            # (CVE-2026-112307). This is done after backslash escaping so\\n            # that an existing backslash cannot neutralize the escape.\\n            if token.ttype is not T.Name or not token.value.startswith('$'):\\n                token.value = token.value.replace('$', '\\\\\\\\\\\\\\\\$')\\n\\n            # Put the token\\n            yield sql.Token(T.Text, token.value)\\n\\n        # Close quote\\n        yield sql.Token(T.Text, '\\\"')\\\"\\\"\\\"\\nassert old in s, \\\"pattern not found\\\"\\ns = s.replace(old, new)\\nopen(p,'w').write(s)\\nEOF\\nsed -n 100,135p sqlparse/filters/output.py\"}"
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/filters/output.py'\\ns=open(p).read()\\nold = \\\"\\\"\\\"            else:\\n                token.value = token.value.replace('\\\\\\\\\\\\\\\\', '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\').replace('\\\"', '\\\\\\\\\\\\\\\\\\\"')\\n\\n            # Put the token\\n            yield sql.Token(T.Text, token.value)\\n\\n        # Close quote\\n        yield sql.Token(T.Text, '\\\"')\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"            else:\\n                token.value = token.value.replace('\\\\\\\\\\\\\\\\', '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\').replace('\\\"', '\\\\\\\\\\\\\\\\\\\"')\\n                # Escape \\\"$\\\" as well: it starts variable or expression\\n                # interpolation inside PHP double-quoted strings\\n                # (CVE-2026-112307).\\n                token.value = token.value.replace('$', '\\\\\\\\\\\\\\\\$')\\n\\n            # Put the token\\n            yield sql.Token(T.Text, token.value)\\n\\n        # Close quote\\n        yield sql.Token(T.Text, '\\\"')\\\"\\\"\\\"\\nassert old in s\\ns=s.replace(old,new)\\nopen(p,'w').write(s)\\nEOF\\nsed -n 100,125p sqlparse/filters/output.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "P7HT03m3K",
-  "content": "                yield sql.Token(T.Text, ' \";')\n                yield sql.Token(T.Whitespace, '\\n')\n\n                # Quote header on secondary lines\n                yield sql.Token(T.Name, varname)\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Operator, '.=')\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Text, '\"')\n\n                # Indentation\n                after_lb = token.value.split('\\n', 1)[1]\n                if after_lb:\n                    yield sql.Token(T.Whitespace, after_lb)\n                continue\n\n            # Escape backslashes before quotes so a backslash preceding a\n            # quote cannot break out of the generated string literal\n            # (GHSA-3496-9g83-7v6x).\n            else:\n                token.value = token.value.replace('\\\\', '\\\\\\\\').replace('\"', '\\\\\"')\n\n            # Escape dollar signs: in PHP double-quoted strings \"$\" starts\n            # variable or expression interpolation, so it must be escaped\n            # (CVE-2026-112307). This is done after backslash escaping so\n            # that an existing backslash cannot neutralize the escape.\n            if token.ttype is not T.Name or not token.value.startswith('$'):\n                token.value = token.value.replace('$', '\\\\$')\n\n            # Put the token\n            yield sql.Token(T.Text, token.value)\n\n        # Close quote\n        yield sql.Token(T.Text, '\"')\n        yield sql.Token(T.Punctuation, ';')\n\n[exit code 0]"
+  "tool_call_id": "EZBEf2Hwm",
+  "content": "                yield sql.Token(T.Text, ' \";')\n                yield sql.Token(T.Whitespace, '\\n')\n\n                # Quote header on secondary lines\n                yield sql.Token(T.Name, varname)\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Operator, '.=')\n                yield sql.Token(T.Whitespace, ' ')\n                yield sql.Token(T.Text, '\"')\n\n                # Indentation\n                after_lb = token.value.split('\\n', 1)[1]\n                if after_lb:\n                    yield sql.Token(T.Whitespace, after_lb)\n                continue\n\n            # Escape backslashes before quotes so a backslash preceding a\n            # quote cannot break out of the generated string literal\n            # (GHSA-3496-9g83-7v6x).\n            else:\n                token.value = token.value.replace('\\\\', '\\\\\\\\').replace('\"', '\\\\\"')\n                # Escape \"$\" as well: it starts variable or expression\n                # interpolation inside PHP double-quoted strings\n                # (CVE-2026-112307).\n                token.value = token.value.replace('$', '\\\\$')\n\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "The condition I added is unnecessary (the variable name is yielded separately, not from the stream). Let me simplify:",
+  "content": "",
   "tool_calls": [
    {
-    "id": "Om18JGWpc",
+    "id": "61TX3tvVd",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\np='sqlparse/filters/output.py'\\ns=open(p).read()\\nold = \\\"\\\"\\\"            if token.ttype is not T.Name or not token.value.startswith('$'):\\n                token.value = token.value.replace('$', '\\\\\\\\\\\\\\\\$')\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"            token.value = token.value.replace('$', '\\\\\\\\\\\\\\\\$')\\\"\\\"\\\"\\nassert old in s\\ns = s.replace(old, new)\\nopen(p,'w').write(s)\\nEOF\\nsed -n 112,130p sqlparse/filters/output.py && python -m pytest -q tests/test_format.py 2>&1 | tail -5\"}"
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/test_format.py 2>&1 | tail -5\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "Om18JGWpc",
-  "content": "                if after_lb:\n                    yield sql.Token(T.Whitespace, after_lb)\n                continue\n\n            # Escape backslashes before quotes so a backslash preceding a\n            # quote cannot break out of the generated string literal\n            # (GHSA-3496-9g83-7v6x).\n            else:\n                token.value = token.value.replace('\\\\', '\\\\\\\\').replace('\"', '\\\\\"')\n\n            # Escape dollar signs: in PHP double-quoted strings \"$\" starts\n            # variable or expression interpolation, so it must be escaped\n            # (CVE-2026-112307). This is done after backslash escaping so\n            # that an existing backslash cannot neutralize the escape.\n            token.value = token.value.replace('$', '\\\\$')\n\n            # Put the token\n            yield sql.Token(T.Text, token.value)\n\n...............................................x........................ [ 92%]\n..x...                                                                   [100%]\n76 passed, 2 xfailed in 0.10s\n\n[exit code 0]"
+  "tool_call_id": "61TX3tvVd",
+  "content": "...............................................x........................ [ 92%]\n..x...                                                                   [100%]\n76 passed, 2 xfailed in 0.11s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "All format tests pass. Now the full suite:",
+  "content": "",
   "tool_calls": [
    {
-    "id": "2eiSUFedU",
+    "id": "9O03jvJcy",
     "type": "function",
     "function": {
      "name": "bash",
@@ -169,30 +169,11 @@
  },
  {
   "role": "tool",
-  "tool_call_id": "2eiSUFedU",
-  "content": "........................................................................ [ 69%]\n....................X................................................... [ 83%]\n........................................................................ [ 96%]\n................                                                         [100%]\n517 passed, 2 xfailed, 1 xpassed in 0.92s\n\n[exit code 0]"
+  "tool_call_id": "9O03jvJcy",
+  "content": "........................................................................ [ 69%]\n....................X................................................... [ 83%]\n........................................................................ [ 96%]\n................                                                         [100%]\n517 passed, 2 xfailed, 1 xpassed in 0.94s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "GENwKR0H4",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && git stash && python -m pytest -q 2>&1 | tail -2; git stash pop\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "GENwKR0H4",
-  "content": "Saved working directory and index state WIP on main: 3966dde task start\nFAILED tests/test_format.py::TestOutputFormat::test_php_dollar_escape_multiline\n9 failed, 508 passed, 2 xfailed, 1 xpassed in 1.09s\nOn branch main\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   sqlparse/filters/output.py\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\nDropped refs/stash@{0} (78e0eea77e8a929a04dad4594dc2cc307b369abe)\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "Fixed. The bug was in `OutputPHPFilter._process` in `sqlparse/filters/output.py`: it escaped backslashes and double quotes but left `$` unescaped, so PHP double-quoted strings would interpolate variables/expressions (CVE-2026-112307). I added a `token.value.replace('$', '\\\\$')` after the backslash escaping (so a pre-existing backslash can't neutralize the escape), leaving the generated `$sql` assignment target untouched. All 9 previously failing tests now pass and the full suite is green (517 passed, no new failures vs. baseline)."
+  "content": "All tests pass (517 passed, no regressions).\n\n**Fix:** In `sqlparse/filters/output.py`, `OutputPHPFilter._process` now also escapes `$` as `\\$` in SQL token values (after backslash/quote escaping), since `$` triggers variable/expression interpolation in PHP double-quoted strings (CVE-2026-112307). The generated assignment target (`$sql`, `$sql2`, ...) is emitted as a separate `T.Name` token and is unaffected, and the Python output format is unchanged."
  }
 ]

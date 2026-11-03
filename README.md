@@ -64,27 +64,42 @@ git clone https://github.com/diegoperezg7/commitarena && cd commitarena && uv ru
 ```text
 $ commitarena demo
 Recorded result (not a live run): 2026-11-03, commitarena 0.1.0, models mistral/codestral-latest,
-mistral/mistral-large-4, ollama/qwen3:4b-16k, on Darwin arm64 (Apple M4, 16 GB RAM).
+mistral/ministral-8b-latest, mistral/mistral-large-4, on Darwin arm64 (Apple M4, 16 GB RAM).
 Repo: https://github.com/andialbrecht/sqlparse (BSD-3-Clause)
 Leaderboard
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┓
-┃ model                    ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
-│ mistral/mistral-large-4  │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5412 │   689,491 │    79 │      12.4 │
-│ ollama/qwen3:4b-16k      │   0/3 │   0% │             - │          0/3 │ 0.0000 │    44,658 │  1055 │       3.0 │
-│ mistral/codestral-latest │  0/11 │   0% │           0/4 │          0/7 │ 0.9241 │ 2,945,928 │    88 │      29.1 │
-└──────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┓
+┃ model                       ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
+│ mistral/mistral-large-4     │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5401 │   672,848 │   118 │      11.1 │
+│ mistral/ministral-8b-latest │  1/11 │   9% │           0/5 │          1/6 │ 0.2445 │ 1,630,017 │    68 │      28.3 │
+│ mistral/codestral-latest    │  0/11 │   0% │           0/4 │          0/7 │ 0.6507 │ 2,038,536 │    75 │      27.8 │
+└─────────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
 ```
 <!-- demo:end -->
 
 <p align="center"><a href="https://diegoperezg7.github.io/commitarena/"><img src="docs/assets/report-light.png" alt="report" width="760"></a></p>
 
-How to read it: with the same prompt, tool, limits and sandbox, Mistral Large 4 fixed all 11 bugs, including
-the 3 committed after its release (October 2026), so it was solving, not recalling. Codestral spent more
-tokens and money and fixed none: it usually looped on the same `sed` or `grep` until the 30-call limit.
-qwen3:4b on Ollama ran 3 tasks and never called the tool, because it spent each reply's 4096 tokens thinking.
-mistral-small-latest answered 429 for the whole session and is not shown. Three tasks after a cutoff is a
-small sample; treat the split as a signal, not a verdict.
+How to read it: with the same prompt, tool, limits and sandbox, Mistral Large 4 fixed all 11 bugs,
+including the 3 committed after its release (October 2026), so it was solving, not recalling. Ministral 8B
+fixed one, and that one is dated after its own cutoff. Codestral fixed none. Three tasks after a cutoff is
+a small sample: treat the split as a signal, not a verdict.
+
+**Why Codestral scores 0/11.** It is the model, not the scoring: it repeated an earlier command verbatim
+in 170 of its 304 tool calls, kept doing so after 163 "you already ran this exact command" notices from
+the harness, ran out of its 30 steps in 9 of 11 attempts, left the code untouched in 6, and never edited a
+test file. This is the start of the `PRIMARY KEY` task, whose human fix is one regex line in
+`sqlparse/keywords.py` (full trajectories are in [docs/demo-run/trajectories](docs/demo-run/trajectories)):
+
+```text
+12 grep -n 'PRIMARY' sqlparse/keywords.py
+13 sed -n '440,450p' sqlparse/keywords.py
+14 sed -n '440,450p' sqlparse/keywords.py      <- repeat notice
+15 grep -n 'KEY' sqlparse/keywords.py
+...
+23 grep -n 'PRIMARY' sqlparse/keywords.py      <- repeat notice
+24 sed -n '440,450p' sqlparse/keywords.py      <- repeat notice
+25 grep -n 'KEY' sqlparse/keywords.py          <- repeat notice
+```
 
 ## Use it on your repo
 
@@ -146,6 +161,7 @@ flowchart LR
 | `run --price MODEL=IN,OUT` | built-in | USD per million tokens for models without a known price. |
 | `run --context-file F` | | Inject an AGENTS.md / CLAUDE.md: `--context-mode both\|repo\|prompt`. |
 | `run --strip-context-files` | off | Remove the repo's own AGENTS.md / CLAUDE.md before the attempt. |
+| `run --think` / `--no-think` | model default | Ollama only: turn reasoning on or off for models like qwen3. |
 | `run --cpus` / `--memory` / `--command-timeout` | `2` / `2g` / `120` | Sandbox limits. |
 | `mine --since` / `--until` / `--scan` / `--max-tasks` | | Which commits to consider. |
 | `mine --python` / `--setup` | `3.12` / `pip install -e .` | How the test image is built. |
@@ -154,11 +170,16 @@ Environment variables: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `MISTRAL_API_KEY`
 `COMMITARENA_CACHE` (clones, default `~/.cache/commitarena`). See [.env.example](.env.example). There is
 no telemetry.
 
-**Ollama context window.** Ollama's OpenAI-compatible endpoint ignores `num_ctx`, and the default window
-can be 4096 tokens, which silently drops the task text. commitarena warns about it. Create a variant once:
+**Ollama context window.** Ollama's OpenAI-compatible endpoint ignores `num_ctx`, and its default
+window can be 4096 tokens, which silently drops the task text and gives worse results. commitarena warns
+about it. Use a variant with `num_ctx 16384` (this is the one used in development, `qwen3:4b-16k`); the
+agent loop elides older tool outputs to stay inside 16K. For reasoning models, `--no-think` asks Ollama to
+skip thinking: with thinking on, qwen3:4b spent its whole 4096-token reply on reasoning and never called
+the tool in our tests.
 
 ```bash
 printf 'FROM qwen3:4b\nPARAMETER num_ctx 16384\n' > Modelfile && ollama create qwen3:4b-16k -f Modelfile
+commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k --no-think
 ```
 
 ## Python API

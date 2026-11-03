@@ -65,16 +65,16 @@ git clone https://github.com/diegoperezg7/commitarena && cd commitarena && uv ru
 ```text
 $ commitarena demo
 Recorded result (not a live run): 2026-11-03, commitarena 0.1.0, models mistral/codestral-latest,
-mistral/mistral-large-4, ollama/qwen3:4b-16k, on Darwin arm64 (Apple M4, 16 GB RAM).
+mistral/ministral-8b-latest, mistral/mistral-large-4, on Darwin arm64 (Apple M4, 16 GB RAM).
 Repo: https://github.com/andialbrecht/sqlparse (BSD-3-Clause)
 Leaderboard
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┓
-┃ model                    ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
-│ mistral/mistral-large-4  │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5412 │   689,491 │    79 │      12.4 │
-│ ollama/qwen3:4b-16k      │   0/3 │   0% │             - │          0/3 │ 0.0000 │    44,658 │  1055 │       3.0 │
-│ mistral/codestral-latest │  0/11 │   0% │           0/4 │          0/7 │ 0.9241 │ 2,945,928 │    88 │      29.1 │
-└──────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┓
+┃ model                       ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
+│ mistral/mistral-large-4     │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5401 │   672,848 │   118 │      11.1 │
+│ mistral/ministral-8b-latest │  1/11 │   9% │           0/5 │          1/6 │ 0.2445 │ 1,630,017 │    68 │      28.3 │
+│ mistral/codestral-latest    │  0/11 │   0% │           0/4 │          0/7 │ 0.6507 │ 2,038,536 │    75 │      27.8 │
+└─────────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
 ```
 <!-- demo:end -->
 
@@ -82,10 +82,25 @@ Leaderboard
 
 Cómo leerlo: con el mismo prompt, herramienta, límites y sandbox, Mistral Large 4 arregló los 11 bugs,
 incluidos los 3 posteriores a su lanzamiento (octubre de 2026), así que los resolvió, no los recordó.
-Codestral gastó más tokens y más dinero y no arregló ninguno: casi siempre repetía el mismo `sed` o `grep`
-hasta el límite de 30 llamadas. qwen3:4b en Ollama corrió 3 tareas y nunca llamó a la herramienta, porque
-gastaba los 4096 tokens de cada respuesta pensando. mistral-small-latest respondió 429 toda la sesión y no
-aparece. Tres tareas después del corte es una muestra pequeña: es una señal, no un veredicto.
+Ministral 8B arregló uno, y ese es posterior a su propio corte. Codestral no arregló ninguno. Tres tareas
+después del corte es una muestra pequeña: es una señal, no un veredicto.
+
+**Por qué Codestral saca 0/11.** Es el modelo, no la puntuación: repitió literalmente un comando anterior
+en 170 de sus 304 llamadas, siguió haciéndolo tras 163 avisos del arnés ("you already ran this exact
+command"), agotó sus 30 pasos en 9 de 11 intentos, no cambió el código en 6 y no tocó ningún test. Así
+empieza la tarea de `PRIMARY KEY`, cuyo fix humano es una línea de regex en `sqlparse/keywords.py`
+(trayectorias completas en [docs/demo-run/trajectories](docs/demo-run/trajectories)):
+
+```text
+12 grep -n 'PRIMARY' sqlparse/keywords.py
+13 sed -n '440,450p' sqlparse/keywords.py
+14 sed -n '440,450p' sqlparse/keywords.py      <- aviso de repetición
+15 grep -n 'KEY' sqlparse/keywords.py
+...
+23 grep -n 'PRIMARY' sqlparse/keywords.py      <- aviso de repetición
+24 sed -n '440,450p' sqlparse/keywords.py      <- aviso de repetición
+25 grep -n 'KEY' sqlparse/keywords.py          <- aviso de repetición
+```
 
 ## Úsalo en tu repo
 
@@ -148,6 +163,7 @@ flowchart LR
 | `run --price MODELO=IN,OUT` | integrado | USD por millón de tokens para modelos sin precio conocido. |
 | `run --context-file F` | | Inyecta un AGENTS.md / CLAUDE.md: `--context-mode both\|repo\|prompt`. |
 | `run --strip-context-files` | no | Quita el AGENTS.md / CLAUDE.md propio del repo antes del intento. |
+| `run --think` / `--no-think` | lo que haga el modelo | Solo Ollama: activa o desactiva el razonamiento en modelos como qwen3. |
 | `run --cpus` / `--memory` / `--command-timeout` | `2` / `2g` / `120` | Límites del sandbox. |
 | `mine --since` / `--until` / `--scan` / `--max-tasks` | | Qué commits se miran. |
 | `mine --python` / `--setup` | `3.12` / `pip install -e .` | Cómo se construye la imagen de tests. |
@@ -157,11 +173,15 @@ Variables de entorno: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `MISTRAL_API_KEY`,
 telemetría.
 
 **Ventana de contexto en Ollama.** El endpoint compatible con OpenAI de Ollama ignora `num_ctx`, y la
-ventana por defecto puede ser de 4096 tokens, lo que tira el texto de la tarea sin avisar. commitarena
-avisa. Crea una variante una vez:
+ventana por defecto puede ser de 4096 tokens, lo que tira el texto de la tarea sin avisar y da peores
+resultados. commitarena avisa. Usa una variante con `num_ctx 16384` (la usada en el desarrollo,
+`qwen3:4b-16k`); el bucle del agente elide las salidas más antiguas para caber en 16K. En modelos de
+razonamiento, `--no-think` le pide a Ollama que no piense: con el thinking activo, qwen3:4b gastó los 4096
+tokens de cada respuesta razonando y nunca llamó a la herramienta en nuestras pruebas.
 
 ```bash
 printf 'FROM qwen3:4b\nPARAMETER num_ctx 16384\n' > Modelfile && ollama create qwen3:4b-16k -f Modelfile
+commitarena run --tasks tasks.json --models ollama/qwen3:4b-16k --no-think
 ```
 
 ## API de Python

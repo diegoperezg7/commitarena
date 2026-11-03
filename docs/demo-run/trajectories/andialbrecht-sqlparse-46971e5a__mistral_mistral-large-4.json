@@ -12,101 +12,101 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "l3XM92jTf",
+    "id": "U74Kr3KnG",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"ls /work && ls /work/sqlparse\"}"
+     "arguments": "{\"command\": \"ls /work && grep -rn \\\"PRIMARY\\\" /work/sqlparse/keywords.py | head\"}"
     }
    },
    {
-    "id": "xYhuRY6om",
+    "id": "4913dPejy",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -rn \\\"PRIMARY\\\" /work/sqlparse/keywords.py | head -20\"}"
+     "arguments": "{\"command\": \"ls /work/sqlparse /work/sqlparse/filters 2>/dev/null\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "l3XM92jTf",
-  "content": "AUTHORS\nCHANGELOG\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\nsql.py\ntokens.py\nutils.py\n\n[exit code 0]"
+  "tool_call_id": "U74Kr3KnG",
+  "content": "AUTHORS\nCHANGELOG\nCONTRIBUTING.md\nLICENSE\nMakefile\nREADME.rst\nSECURITY.md\nTODO\ndocs\nexamples\npyproject.toml\nsqlparse\ntests\n448:    'PRIMARY': tokens.Keyword,\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "xYhuRY6om",
-  "content": "448:    'PRIMARY': tokens.Keyword,\n\n[exit code 0]"
+  "tool_call_id": "4913dPejy",
+  "content": "/work/sqlparse:\n__init__.py\n__main__.py\ncli.py\nengine\nexceptions.py\nfilters\nformatter.py\nkeywords.py\nlexer.py\nsql.py\ntokens.py\nutils.py\n\n/work/sqlparse/filters:\n__init__.py\naligned_indent.py\nothers.py\noutput.py\nreindent.py\nright_margin.py\ntokens.py\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "ofXnKVMHh",
+    "id": "4pAzAJd6H",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cat /work/sqlparse/lexer.py\"}"
+     "arguments": "{\"command\": \"grep -n \\\"KEY\\\" /work/sqlparse/keywords.py | head -30; grep -n \\\"GROUP BY\\\\|ORDER BY\\\\|PRIMARY\\\" /work/sqlparse/keywords.py\"}"
     }
    },
    {
-    "id": "Mag4P39Su",
+    "id": "furyx8Gp6",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -n \\\"KEY\\\" /work/sqlparse/keywords.py | head -30\"}"
+     "arguments": "{\"command\": \"grep -rn \\\"GROUP\\\\|keywords\\\" /work/sqlparse/lexer.py | head -30\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "ofXnKVMHh",
-  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\n\"\"\"SQL Lexer\"\"\"\nimport re\nfrom threading import Lock\n\n# This code is based on the SqlLexer in pygments.\n# http://pygments.org/\n# It's separated from the rest of pygments to increase performance\n# and to allow some customizations.\n\nfrom io import TextIOBase\n\nfrom sqlparse import tokens, keywords\nfrom sqlparse.utils import consume\n\n\nclass Lexer:\n    \"\"\"The Lexer supports configurable syntax.\n    To add support for additional keywords, use the `add_keywords` method.\"\"\"\n\n    _default_instance = None\n    _lock = Lock()\n\n    # Development notes:\n    # - This class is prepared to be able to support additional SQL dialects\n    #   in the future by adding additional functions that take the place of\n    #   the function default_initialization().\n    # - The lexer class uses an explicit singleton behavior with the\n    #   instance-getter method get_default_instance(). This mechanism has\n    #   the advantage that the call signature of the entry-points to the\n    #   sqlparse library are not affected. Also, usage of sqlparse in third\n    #   party code does not need to be adapted. On the other hand, the current\n    #   implementation does not easily allow for multiple SQL dialects to be\n    #   parsed in the same process.\n    #   Such behavior can be supported in the future by passing a\n    #   suitably initialized lexer object as an additional parameter to the\n    #   entry-point functions (such as `parse`). Code will need to be written\n    #   to pass down and utilize such an object. The current implementation\n    #   is prepared to support this thread safe approach without the\n    #   default_instance part needing to change interface.\n\n    @classmethod\n    def get_default_instance(cls):\n        \"\"\"Returns the lexer instance used internally\n        by the sqlparse core functions.\"\"\"\n        with cls._lock:\n            if cls._default_instance is None:\n                cls._default_instance = cls()\n                cls._default_instance.default_initialization()\n        return cls._default_instance\n\n    def default_initialization(self):\n        \"\"\"Initialize the lexer with default dictionaries.\n        Useful if you need to revert custom syntax settings.\"\"\"\n        self.clear()\n        self.set_SQL_REGEX(keywords.SQL_REGEX)\n        self.add_keywords(keywords.KEYWORDS_COMMON)\n        self.add_keywords(keywords.KEYWORDS_ORACLE)\n        self.add_keywords(keywords.KEYWORDS_MYSQL)\n        self.add_keywords(keywords.KEYWORDS_PLPGSQL)\n        self.add_keywords(keywords.KEYWORDS_HQL)\n        self.add_keywords(keywords.KEYWORDS_MSACCESS)\n        self.add_keywords(keywords.KEYWORDS_SNOWFLAKE)\n        self.add_keywords(keywords.KEYWORDS_BIGQUERY)\n        self.add_keywords(keywords.KEYWORDS)\n\n    def clear(self):\n        \"\"\"Clear all syntax configurations.\n        Useful if you want to load a reduced set of syntax configurations.\n        After this call, regexps and keyword dictionaries need to be loaded\n        to make the lexer functional again.\"\"\"\n        self._SQL_REGEX = []\n        self._keywords = []\n\n    def set_SQL_REGEX(self, SQL_REGEX):\n        \"\"\"Set the list of regex that will parse the SQL.\"\"\"\n        FLAGS = re.IGNORECASE | re.UNICODE\n        self._SQL_REGEX = [\n            (re.compile(rx, FLAGS).match, tt)\n            for rx, tt in SQL_REGEX\n        ]\n\n    def add_keywords(self, keywords):\n        \"\"\"Add keyword dictionaries. Keywords are looked up in the same order\n        that dictionaries were added.\"\"\"\n        self._keywords.append(keywords)\n\n    def is_keyword(self, value):\n        \"\"\"Checks for a keyword.\n\n        If the given value is in one of the KEYWORDS_* dictionary\n        it's considered a keyword. Otherwise, tokens.Name is returned.\n        \"\"\"\n        val = value.upper()\n        for kwdict in self._keywords:\n            if val in kwdict:\n                return kwdict[val], value\n        else:\n            return tokens.Name, value\n\n    def get_tokens(self, text, encoding=None):\n        \"\"\"\n        Return an iterable of (tokentype, value) pairs generated from\n        `text`. If `unfiltered` is set to `True`, the filtering mechanism\n        is bypassed even if filters are defined.\n\n        Also preprocess the text, i.e. expand tabs and strip it if\n        wanted and applies registered filters.\n\n        Split ``text`` into (tokentype, text) pairs.\n\n        ``stack`` is the initial stack (default: ``['root']``)\n        \"\"\"\n        if isinstance(text, TextIOBase):\n            text = text.read()\n\n        if isinstance(text, str):\n            pass\n        elif isinstance(text, bytes):\n            if encoding:\n                text = text.decode(encoding)\n            else:\n                try:\n                    text = text.decode('utf-8')\n                except UnicodeDecodeError:\n                    text = text.decode('unicode-escape')\n        else:\n            raise TypeError(\"Expected text or file-like object, got {!r}\".\n                            format(type(text)))\n\n        iterable = enumerate(text)\n        for pos, char in iterable:\n            for rexmatch, action in self._SQL_REGEX:\n                m = rexmatch(text, pos)\n\n                if not m:\n                    continue\n                elif isinstance(action, tokens._TokenType):\n                    yield action, m.group()\n                elif action is keywords.PROCESS_AS_KEYWORD:\n                    yield self.is_keyword(m.group())\n\n                consume(iterable, m.end() - pos - 1)\n                break\n            else:\n                yield tokens.Error, char\n\n\ndef tokenize(sql, encoding=None):\n    \"\"\"Tokenize sql.\n\n    Tokenize *sql* using the :class:`Lexer` and return a 2-tuple stream\n    of ``(token type, value)`` items.\n    \"\"\"\n    return Lexer.get_default_instance().get_tokens(sql, encoding)\n\n[exit code 0]"
+  "tool_call_id": "4pAzAJd6H",
+  "content": "12:# shall be processed further through a lookup in the KEYWORDS dictionaries\n13:PROCESS_AS_KEYWORD = object()\n90:    (r'\\w[$#\\w]*', PROCESS_AS_KEYWORD),\n98:KEYWORDS = {\n333:    'KEY': tokens.Keyword,\n334:    'KEY_MEMBER': tokens.Keyword,\n335:    'KEY_TYPE': tokens.Keyword,\n673:KEYWORDS_COMMON = {\n723:KEYWORDS_ORACLE = {\n832:KEYWORDS_MYSQL = {\n837:KEYWORDS_PLPGSQL = {\n882:KEYWORDS_HQL = {\n966:KEYWORDS_MSACCESS = {\n971:KEYWORDS_SNOWFLAKE = {\n988:KEYWORDS_BIGQUERY = {\n448:    'PRIMARY': tokens.Keyword,\n\n[exit code 0]"
  },
  {
   "role": "tool",
-  "tool_call_id": "Mag4P39Su",
-  "content": "12:# shall be processed further through a lookup in the KEYWORDS dictionaries\n13:PROCESS_AS_KEYWORD = object()\n90:    (r'\\w[$#\\w]*', PROCESS_AS_KEYWORD),\n98:KEYWORDS = {\n333:    'KEY': tokens.Keyword,\n334:    'KEY_MEMBER': tokens.Keyword,\n335:    'KEY_TYPE': tokens.Keyword,\n673:KEYWORDS_COMMON = {\n723:KEYWORDS_ORACLE = {\n832:KEYWORDS_MYSQL = {\n837:KEYWORDS_PLPGSQL = {\n882:KEYWORDS_HQL = {\n966:KEYWORDS_MSACCESS = {\n971:KEYWORDS_SNOWFLAKE = {\n988:KEYWORDS_BIGQUERY = {\n\n[exit code 0]"
+  "tool_call_id": "furyx8Gp6",
+  "content": "19:from sqlparse import tokens, keywords\n25:    To add support for additional keywords, use the `add_keywords` method.\"\"\"\n62:        self.set_SQL_REGEX(keywords.SQL_REGEX)\n63:        self.add_keywords(keywords.KEYWORDS_COMMON)\n64:        self.add_keywords(keywords.KEYWORDS_ORACLE)\n65:        self.add_keywords(keywords.KEYWORDS_MYSQL)\n66:        self.add_keywords(keywords.KEYWORDS_PLPGSQL)\n67:        self.add_keywords(keywords.KEYWORDS_HQL)\n68:        self.add_keywords(keywords.KEYWORDS_MSACCESS)\n69:        self.add_keywords(keywords.KEYWORDS_SNOWFLAKE)\n70:        self.add_keywords(keywords.KEYWORDS_BIGQUERY)\n71:        self.add_keywords(keywords.KEYWORDS)\n79:        self._keywords = []\n89:    def add_keywords(self, keywords):\n92:        self._keywords.append(keywords)\n101:        for kwdict in self._keywords:\n146:                elif action is keywords.PROCESS_AS_KEYWORD:\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "AS3JYfkts",
+    "id": "dTbMZEt6e",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"sed -n 1,100p /work/sqlparse/keywords.py\"}"
+     "arguments": "{\"command\": \"sed -n 1,120p /work/sqlparse/keywords.py\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "AS3JYfkts",
-  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import tokens\n\n# object() only supports \"is\" and is useful as a marker\n# use this marker to specify that the given regex in SQL_REGEX\n# shall be processed further through a lookup in the KEYWORDS dictionaries\nPROCESS_AS_KEYWORD = object()\n\n\nSQL_REGEX = [\n    (r'(--|# )\\+.*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single.Hint),\n    (r'/\\*\\+[\\s\\S]*?\\*/', tokens.Comment.Multiline.Hint),\n\n    (r'(--|# ).*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single),\n    (r'/\\*[\\s\\S]*?\\*/', tokens.Comment.Multiline),\n\n    (r'(\\r\\n|\\r|\\n)', tokens.Newline),\n    (r'\\s+?', tokens.Whitespace),\n\n    (r':=', tokens.Assignment),\n    (r'::', tokens.Punctuation),\n\n    (r'\\*', tokens.Wildcard),\n\n    (r\"`(``|[^`])*`\", tokens.Name),\n    (r\"´(´´|[^´])*´\", tokens.Name),\n    (r'((?<![\\w\\\"\\$])\\$(?:[_A-ZÀ-Ü]\\w*)?\\$)[\\s\\S]*?\\1', tokens.Literal),\n\n    (r'\\?', tokens.Name.Placeholder),\n    (r'%(\\(\\w+\\))?s', tokens.Name.Placeholder),\n    (r'(?<!\\w)[$:?]\\w+', tokens.Name.Placeholder),\n\n    (r'\\\\\\w+', tokens.Command),\n\n    # FIXME(andi): VALUES shouldn't be listed here\n    # see https://github.com/andialbrecht/sqlparse/pull/64\n    # AS and IN are special, it may be followed by a parenthesis, but\n    # are never functions, see issue183 and issue507\n    (r'(CASE|IN|VALUES|USING|FROM|AS)\\b', tokens.Keyword),\n\n    (r'(@|##|#)[A-ZÀ-Ü]\\w+', tokens.Name),\n\n    # see issue #39\n    # Spaces around period `schema . name` are valid identifier\n    # TODO: Spaces before period not implemented\n    (r'[A-ZÀ-Ü]\\w*(?=\\s*\\.)', tokens.Name),  # 'Name'.\n    # FIXME(atronah): never match,\n    # because `re.match` doesn't work with look-behind regexp feature\n    (r'(?<=\\.)[A-ZÀ-Ü]\\w*', tokens.Name),  # .'Name'\n    (r'[A-ZÀ-Ü]\\w*(?=\\()', tokens.Name),  # side effect: change kw to func\n    (r'-?0x[\\dA-F]+', tokens.Number.Hexadecimal),\n    (r'-?\\d+(\\.\\d+)?E-?\\d+', tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?(\\d+(\\.\\d*)|\\.\\d+)(?![_A-ZÀ-Ü])',\n     tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?\\d+(?![_A-ZÀ-Ü])', tokens.Number.Integer),\n    (r\"'(''|\\\\'|[^'])*'\", tokens.String.Single),\n    # not a real string literal in ANSI SQL:\n    (r'\"(\"\"|\\\\\"|[^\"])*\"', tokens.String.Symbol),\n    (r'(\"\"|\".*?[^\\\\]\")', tokens.String.Symbol),\n    # sqlite names can be escaped with [square brackets]. left bracket\n    # cannot be preceded by word character or a right bracket --\n    # otherwise it's probably an array index\n    (r'(?<![\\w\\])])(\\[[^\\]\\[]+\\])', tokens.Name),\n    (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?'\n     r'|(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b', tokens.Keyword),\n    (r'END(\\s+IF|\\s+LOOP|\\s+WHILE)?\\b', tokens.Keyword),\n    (r'NOT\\s+NULL\\b', tokens.Keyword),\n    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n    (r'UNION\\s+ALL\\b', tokens.Keyword),\n    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n    (r'DOUBLE\\s+PRECISION\\b', tokens.Name.Builtin),\n    (r'GROUP\\s+BY\\b', tokens.Keyword),\n    (r'ORDER\\s+BY\\b', tokens.Keyword),\n    (r'HANDLER\\s+FOR\\b', tokens.Keyword),\n    (r'GO(\\s\\d+)\\b', tokens.Keyword),\n    (r'(LATERAL\\s+VIEW\\s+)'\n     r'(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\\b',\n     tokens.Keyword),\n    (r\"(AT|WITH')\\s+TIME\\s+ZONE\\s+'[^']+'\", tokens.Keyword.TZCast),\n    (r'(NOT\\s+)?(LIKE|ILIKE|RLIKE)\\b', tokens.Operator.Comparison),\n    (r'(NOT\\s+)?(REGEXP)\\b', tokens.Operator.Comparison),\n    # Check for keywords, also returns tokens.Name if regex matches\n    # but the match isn't a keyword.\n    (r'\\w[$#\\w]*', PROCESS_AS_KEYWORD),\n    (r'[;:()\\[\\],\\.]', tokens.Punctuation),\n    # JSON operators\n    (r'(\\->>?|#>>?|@>|<@|\\?\\|?|\\?&|\\-|#\\-)', tokens.Operator),\n    (r'[<>=~!]+', tokens.Operator.Comparison),\n    (r'[+/@#%^&|^-]+', tokens.Operator),\n]\n\nKEYWORDS = {\n    'ABORT': tokens.Keyword,\n    'ABS': tokens.Keyword,\n\n[exit code 0]"
+  "tool_call_id": "dTbMZEt6e",
+  "content": "#\n# Copyright (C) 2009-2020 the sqlparse authors and contributors\n# <see AUTHORS file>\n#\n# This module is part of python-sqlparse and is released under\n# the BSD License: https://opensource.org/licenses/BSD-3-Clause\n\nfrom sqlparse import tokens\n\n# object() only supports \"is\" and is useful as a marker\n# use this marker to specify that the given regex in SQL_REGEX\n# shall be processed further through a lookup in the KEYWORDS dictionaries\nPROCESS_AS_KEYWORD = object()\n\n\nSQL_REGEX = [\n    (r'(--|# )\\+.*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single.Hint),\n    (r'/\\*\\+[\\s\\S]*?\\*/', tokens.Comment.Multiline.Hint),\n\n    (r'(--|# ).*?(\\r\\n|\\r|\\n|$)', tokens.Comment.Single),\n    (r'/\\*[\\s\\S]*?\\*/', tokens.Comment.Multiline),\n\n    (r'(\\r\\n|\\r|\\n)', tokens.Newline),\n    (r'\\s+?', tokens.Whitespace),\n\n    (r':=', tokens.Assignment),\n    (r'::', tokens.Punctuation),\n\n    (r'\\*', tokens.Wildcard),\n\n    (r\"`(``|[^`])*`\", tokens.Name),\n    (r\"´(´´|[^´])*´\", tokens.Name),\n    (r'((?<![\\w\\\"\\$])\\$(?:[_A-ZÀ-Ü]\\w*)?\\$)[\\s\\S]*?\\1', tokens.Literal),\n\n    (r'\\?', tokens.Name.Placeholder),\n    (r'%(\\(\\w+\\))?s', tokens.Name.Placeholder),\n    (r'(?<!\\w)[$:?]\\w+', tokens.Name.Placeholder),\n\n    (r'\\\\\\w+', tokens.Command),\n\n    # FIXME(andi): VALUES shouldn't be listed here\n    # see https://github.com/andialbrecht/sqlparse/pull/64\n    # AS and IN are special, it may be followed by a parenthesis, but\n    # are never functions, see issue183 and issue507\n    (r'(CASE|IN|VALUES|USING|FROM|AS)\\b', tokens.Keyword),\n\n    (r'(@|##|#)[A-ZÀ-Ü]\\w+', tokens.Name),\n\n    # see issue #39\n    # Spaces around period `schema . name` are valid identifier\n    # TODO: Spaces before period not implemented\n    (r'[A-ZÀ-Ü]\\w*(?=\\s*\\.)', tokens.Name),  # 'Name'.\n    # FIXME(atronah): never match,\n    # because `re.match` doesn't work with look-behind regexp feature\n    (r'(?<=\\.)[A-ZÀ-Ü]\\w*', tokens.Name),  # .'Name'\n    (r'[A-ZÀ-Ü]\\w*(?=\\()', tokens.Name),  # side effect: change kw to func\n    (r'-?0x[\\dA-F]+', tokens.Number.Hexadecimal),\n    (r'-?\\d+(\\.\\d+)?E-?\\d+', tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?(\\d+(\\.\\d*)|\\.\\d+)(?![_A-ZÀ-Ü])',\n     tokens.Number.Float),\n    (r'(?![_A-ZÀ-Ü])-?\\d+(?![_A-ZÀ-Ü])', tokens.Number.Integer),\n    (r\"'(''|\\\\'|[^'])*'\", tokens.String.Single),\n    # not a real string literal in ANSI SQL:\n    (r'\"(\"\"|\\\\\"|[^\"])*\"', tokens.String.Symbol),\n    (r'(\"\"|\".*?[^\\\\]\")', tokens.String.Symbol),\n    # sqlite names can be escaped with [square brackets]. left bracket\n    # cannot be preceded by word character or a right bracket --\n    # otherwise it's probably an array index\n    (r'(?<![\\w\\])])(\\[[^\\]\\[]+\\])', tokens.Name),\n    (r'((LEFT\\s+|RIGHT\\s+|FULL\\s+)?(INNER\\s+|OUTER\\s+|STRAIGHT\\s+)?'\n     r'|(CROSS\\s+|NATURAL\\s+)?)?JOIN\\b', tokens.Keyword),\n    (r'END(\\s+IF|\\s+LOOP|\\s+WHILE)?\\b', tokens.Keyword),\n    (r'NOT\\s+NULL\\b', tokens.Keyword),\n    (r'NULLS\\s+(FIRST|LAST)\\b', tokens.Keyword),\n    (r'UNION\\s+ALL\\b', tokens.Keyword),\n    (r'CREATE(\\s+OR\\s+REPLACE)?\\b', tokens.Keyword.DDL),\n    (r'DOUBLE\\s+PRECISION\\b', tokens.Name.Builtin),\n    (r'GROUP\\s+BY\\b', tokens.Keyword),\n    (r'ORDER\\s+BY\\b', tokens.Keyword),\n    (r'HANDLER\\s+FOR\\b', tokens.Keyword),\n    (r'GO(\\s\\d+)\\b', tokens.Keyword),\n    (r'(LATERAL\\s+VIEW\\s+)'\n     r'(EXPLODE|INLINE|PARSE_URL_TUPLE|POSEXPLODE|STACK)\\b',\n     tokens.Keyword),\n    (r\"(AT|WITH')\\s+TIME\\s+ZONE\\s+'[^']+'\", tokens.Keyword.TZCast),\n    (r'(NOT\\s+)?(LIKE|ILIKE|RLIKE)\\b', tokens.Operator.Comparison),\n    (r'(NOT\\s+)?(REGEXP)\\b', tokens.Operator.Comparison),\n    # Check for keywords, also returns tokens.Name if regex matches\n    # but the match isn't a keyword.\n    (r'\\w[$#\\w]*', PROCESS_AS_KEYWORD),\n    (r'[;:()\\[\\],\\.]', tokens.Punctuation),\n    # JSON operators\n    (r'(\\->>?|#>>?|@>|<@|\\?\\|?|\\?&|\\-|#\\-)', tokens.Operator),\n    (r'[<>=~!]+', tokens.Operator.Comparison),\n    (r'[+/@#%^&|^-]+', tokens.Operator),\n]\n\nKEYWORDS = {\n    'ABORT': tokens.Keyword,\n    'ABS': tokens.Keyword,\n    'ABSOLUTE': tokens.Keyword,\n    'ACCESS': tokens.Keyword,\n    'ADA': tokens.Keyword,\n    'ADD': tokens.Keyword,\n    'ADMIN': tokens.Keyword,\n    'AFTER': tokens.Keyword,\n    'AGGREGATE': tokens.Keyword,\n    'ALIAS': tokens.Keyword,\n    'ALL': tokens.Keyword,\n    'ALLOCATE': tokens.Keyword,\n    'ANALYSE': tokens.Keyword,\n    'ANALYZE': tokens.Keyword,\n    'ANY': tokens.Keyword,\n    'ARRAYLEN': tokens.Keyword,\n    'ARE': tokens.Keyword,\n    'ASC': tokens.Keyword.Order,\n    'ASENSITIVE': tokens.Keyword,\n    'ASSERTION': tokens.Keyword,\n    'ASSIGNMENT': tokens.Keyword,\n    'ASYMMETRIC': tokens.Keyword,\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "PPpWseXQy",
+    "id": "OTsQMDz9w",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -rn \\\"PRIMARY\\\" /work/tests/*.py | head -30\"}"
+     "arguments": "{\"command\": \"grep -rn \\\"PRIMARY KEY\\\\|PRIMARY\\\\s*KEY\\\" /work/tests | head -20\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "PPpWseXQy",
+  "tool_call_id": "OTsQMDz9w",
   "content": "/work/tests/test_regressions.py:450:    p = sqlparse.parse('PRIMARY KEY')[0]\n\n[exit code 0]"
  },
  {
@@ -114,117 +114,60 @@
   "content": "",
   "tool_calls": [
    {
-    "id": "dBFAC9IYL",
+    "id": "pRm3E08uI",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"grep -rn \\\"FOREIGN\\\\|REFERENCES\\\\|UNIQUE\\\" /work/sqlparse/keywords.py | head -20; grep -rn \\\"group\\\" /work/sqlparse/filters/*.py | head -40\"}"
+     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/ 2>&1 | tail -5\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "dBFAC9IYL",
-  "content": "275:    'FOREIGN': tokens.Keyword,\n462:    'REFERENCES': tokens.Keyword,\n586:    'UNIQUE': tokens.Keyword,\n955:    'UNIQUEJOIN': tokens.Keyword,\n/work/sqlparse/filters/aligned_indent.py:102:            # joins, group/order by are special case. only consider the first\n/work/sqlparse/filters/aligned_indent.py:118:        for sgroup in tlist.get_sublists():\n/work/sqlparse/filters/aligned_indent.py:119:            idx = tlist.token_index(sgroup)\n/work/sqlparse/filters/aligned_indent.py:121:            # HACK: make \"group/order by\" work. Longer than max_len.\n/work/sqlparse/filters/aligned_indent.py:126:                self._process(sgroup)\n/work/sqlparse/filters/others.py:30:                return sql.Token(T.Whitespace.Newline, m.groups()[0])\n/work/sqlparse/filters/others.py:54:        [self.process(sgroup) for sgroup in stmt.get_sublists()]\n/work/sqlparse/filters/others.py:97:        [self.process(sgroup, depth + 1) for sgroup in stmt.get_sublists()]\n/work/sqlparse/filters/others.py:124:        [self.process(sgroup) for sgroup in stmt.get_sublists()]\n/work/sqlparse/filters/reindent.py:30:        if token.is_group:\n/work/sqlparse/filters/reindent.py:202:                # Line breaks on group level are done. let's add an offset of\n/work/sqlparse/filters/reindent.py:230:        for sgroup in tlist.get_sublists():\n/work/sqlparse/filters/reindent.py:231:            self._process(sgroup)\n/work/sqlparse/filters/right_margin.py:23:    def _process(self, group, stream):\n/work/sqlparse/filters/right_margin.py:30:            elif token.is_group and type(token) not in self.keep_together:\n/work/sqlparse/filters/right_margin.py:37:                        indent = match.group()\n/work/sqlparse/filters/right_margin.py:45:    def process(self, group):\n/work/sqlparse/filters/right_margin.py:47:        # group.tokens = self._process(group, group.tokens)\n\n[exit code 0]"
+  "tool_call_id": "pRm3E08uI",
+  "content": "\ntests/test_regressions.py:451: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_regressions.py::test_primary_key_issue740 - AssertionError:...\n1 failed, 449 passed, 3 xfailed in 0.64s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "EilmA3fOO",
+    "id": "bU5kLO8oA",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"head -60 /work/CHANGELOG; grep -rn \\\"740\\\" /work -r | head\"}"
+     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/keywords.py'\\ns=open(p).read()\\nold=\\\"    (r'GROUP\\\\\\\\s+BY\\\\\\\\b', tokens.Keyword),\\\\n\\\"\\nnew=\\\"    (r'PRIMARY\\\\\\\\s+KEY\\\\\\\\b', tokens.Keyword),\\\\n\\\"+old\\nassert old in s\\ns=s.replace(old,new,1)\\nopen(p,'w').write(s)\\nEOF\\npython -m pytest -q tests/ 2>&1 | tail -3\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "EilmA3fOO",
-  "content": "Development Version\n-------------------\n\nNotable Changes\n\n* Drop support for Python 3.5, 3.6, and 3.7.\n* Python 3.12 is now supported (pr725, by hugovk).\n\nEnhancements:\n\n* Splitting statements now allows to remove the semicolon at the end.\n  Some database backends love statements without semicolon (issue742).\n* Support TypedLiterals in get_parameters (pr649, by Khrol).\n* Improve splitting of Transact SQL when using GO keyword (issue762).\n* Support for some JSON operators (issue682).\n* Improve formatting of statements containing JSON operators (issue542).\n* Support for BigQuery and Snowflake keywords (pr699, by griffatrasgo).\n\nBug Fixes\n\n* Ignore dunder attributes when creating Tokens (issue672).\n* Allow operators to precede dollar-quoted strings (issue763).\n* Fix parsing of nested order clauses (issue745, pr746 by john-bodley).\n* Thread-safe initialization of Lexer class (issue730).\n* Classify TRUNCATE as DDL and GRANT/REVOKE as DCL keywords (based on pr719\n  by josuc1, thanks for bringing this up!)\n\n\nRelease 0.4.4 (Apr 18, 2023)\n----------------------------\n\nNotable Changes\n\n* IMPORTANT: This release fixes a security vulnerability in the\n  parser where a regular expression vulnerable to ReDOS (Regular\n  Expression Denial of Service) was used. See the security advisory\n  for details: https://github.com/andialbrecht/sqlparse/security/advisories/GHSA-rrm6-wvj7-cwh2\n  The vulnerability was discovered by @erik-krogh from GitHub\n  Security Lab (GHSL). Thanks for reporting!\n\nBug Fixes\n\n* Revert a change from 0.4.0 that changed IN to be a comparison (issue694).\n  The primary expectation is that IN is treated as a keyword and not as a\n  comparison operator. That also follows the definition of reserved keywords\n  for the major SQL syntax definitions.\n* Fix regular expressions for string parsing.\n\nOther\n\n* sqlparse now uses pyproject.toml instead of setup.cfg (issue685).\n\n\nRelease 0.4.3 (Sep 23, 2022)\n----------------------------\n\nEnhancements\n\n* Add support for DIV operator (pr664, by chezou).\n* Add support for additional SPARK keywords (pr643, by mrmasterplan).\n/work/tests/test_regressions.py:449:def test_primary_key_issue740():\n\n[exit code 0]"
+  "tool_call_id": "bU5kLO8oA",
+  "content": "........................................................................ [ 95%]\n.....................                                                    [100%]\n450 passed, 3 xfailed in 1.39s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
   "content": "",
   "tool_calls": [
    {
-    "id": "AvJeBPMzN",
+    "id": "XgD8wIYZi",
     "type": "function",
     "function": {
      "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\nimport re\\np='sqlparse/keywords.py'\\ns=open(p).read()\\nold=\\\"    (r'NOT\\\\\\\\s+NULL\\\\\\\\b', tokens.Keyword),\\\\n\\\"\\nassert old in s\\nnew = old + \\\"    (r'PRIMARY\\\\\\\\s+KEY\\\\\\\\b', tokens.Keyword),\\\\n\\\"\\ns=s.replace(old,new,1)\\nopen(p,'w').write(s)\\nEOF\\ngrep -n \\\"PRIMARY\\\" sqlparse/keywords.py\"}"
+     "arguments": "{\"command\": \"cd /work && python -c \\\"\\nimport sqlparse\\nfrom sqlparse import tokens\\np=sqlparse.parse('PRIMARY KEY')[0]\\nprint(len(p.tokens), p.tokens[0].ttype, repr(str(p)))\\nprint(sqlparse.parse('select * from foo where a=1 primary key')[0].tokens)\\n\\\" && python -m pytest -q tests/test_regressions.py 2>&1 | tail -2\"}"
     }
    }
   ]
  },
  {
   "role": "tool",
-  "tool_call_id": "AvJeBPMzN",
-  "content": "74:    (r'PRIMARY\\s+KEY\\b', tokens.Keyword),\n449:    'PRIMARY': tokens.Keyword,\n\n[exit code 0]"
+  "tool_call_id": "XgD8wIYZi",
+  "content": "1 Token.Keyword 'PRIMARY KEY'\n[<DML 'select' at 0xFFFF7FEC83A0>, <Whitespace ' ' at 0xFFFF7FEC84C0>, <Wildcard '*' at 0xFFFF7FEC8520>, <Whitespace ' ' at 0xFFFF7FEC86A0>, <Keyword 'from' at 0xFFFF7FEC8820>, <Whitespace ' ' at 0xFFFF7FEC88E0>, <Identifier 'foo' at 0xFFFF7FE07E00>, <Whitespace ' ' at 0xFFFF7FEC89A0>, <Where 'where ...' at 0xFFFF7FE07D20>]\n......x.........                                                         [100%]\n87 passed, 1 xfailed in 0.10s\n\n[exit code 0]"
  },
  {
   "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "SJhSwWvSI",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -m pytest -q tests/test_regressions.py 2>&1 | tail -5\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "SJhSwWvSI",
-  "content": "........................................................................ [ 81%]\n......x.........                                                         [100%]\n87 passed, 1 xfailed in 0.08s\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "qFsDu2Knl",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python -m pytest -q 2>&1 | tail -5\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "qFsDu2Knl",
-  "content": "........................................................................ [ 63%]\n...........................................................x............ [ 79%]\n........................................................................ [ 95%]\n.....................                                                    [100%]\n450 passed, 3 xfailed in 0.41s\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "",
-  "tool_calls": [
-   {
-    "id": "mASd1Moxi",
-    "type": "function",
-    "function": {
-     "name": "bash",
-     "arguments": "{\"command\": \"cd /work && python - <<'EOF'\\np='CHANGELOG'\\ns=open(p).read()\\nold=\\\"* Thread-safe initialization of Lexer class (issue730).\\\\n\\\"\\nnew=old+\\\"* Group PRIMARY KEY as a single Keyword token (issue740).\\\\n\\\"\\nassert old in s\\nopen(p,'w').write(s.replace(old,new,1))\\nEOF\\npython -c \\\"import sqlparse; p=sqlparse.parse('PRIMARY KEY')[0]; print(len(p.tokens), p.tokens[0].ttype, repr(str(p)))\\\"\"}"
-    }
-   }
-  ]
- },
- {
-  "role": "tool",
-  "tool_call_id": "mASd1Moxi",
-  "content": "1 Token.Keyword 'PRIMARY KEY'\n\n[exit code 0]"
- },
- {
-  "role": "assistant",
-  "content": "Fixed by adding a `PRIMARY\\s+KEY` multi-word keyword regex to `SQL_REGEX` in `sqlparse/keywords.py` (placed alongside the other multi-word keyword rules like `NOT NULL`), so `PRIMARY KEY` lexes as a single `Keyword` token; also noted the fix in the CHANGELOG. Full test suite passes (450 passed, 3 xfailed)."
+  "content": "Fixed by adding a `PRIMARY\\s+KEY\\b` regex rule (tokenized as `Keyword`) to `SQL_REGEX` in `sqlparse/keywords.py`, alongside the existing `GROUP BY`/`ORDER BY` multi-word keyword rules, so `PRIMARY KEY` lexes as a single `Keyword` token. All 450 tests pass."
  }
 ]
