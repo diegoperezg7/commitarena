@@ -252,7 +252,7 @@ def run_suite(
             "hardware": hardware(),
             "models": sorted({*meta.get("models", []), *(m.id for m in models)}),
             "cutoffs": {**meta.get("cutoffs", {}), **(cutoffs or {})},
-            "max_steps": (agent_config or AgentConfig()).max_steps,
+            "agent": {k: v for k, v in asdict(agent_config or AgentConfig()).items() if k != "system_prompt"},
             "sandbox": asdict(sandbox_config or SandboxConfig()),
             "context_file": context.name if context else None,
             "strip_context_files": strip_context_files,

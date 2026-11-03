@@ -18,6 +18,8 @@ DEFAULT_CUTOFFS: dict[str, str] = {
     "mistral/codestral-2508": "2025-07-31",
     "mistral/mistral-small-latest": "2026-03-01",  # mistral-small-2603 (v26.03)
     "mistral/mistral-small-2603": "2026-03-01",
+    "mistral/ministral-8b-latest": "2025-12-01",  # ministral-8b-2512 (Ministral 3, v25.12)
+    "mistral/ministral-8b-2512": "2025-12-01",
     "mistral/mistral-large-4": "2026-10-01",  # Mistral Large 4, v26.10 (Mistral docs)
     "mistral/mistral-large-4-0": "2026-10-01",
     "ollama/qwen3:4b-16k": "2025-04-29",  # same weights as qwen3:4b, larger context window

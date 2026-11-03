@@ -49,6 +49,11 @@ class AgentConfig:
     max_tokens: int = 4096  # per model reply
     temperature: float = 0.0
     system_prompt: str = SYSTEM_PROMPT
+    # Older tool outputs are elided once the conversation passes this size, so a 16K-token local
+    # model keeps the task text and the latest outputs (about 3.5 characters per token).
+    max_context_chars: int = 40000
+    # think=False asks Ollama reasoning models (qwen3, ...) not to think. Hosted models ignore it.
+    think: bool | None = None
 
 
 @dataclass
@@ -56,7 +61,7 @@ class AgentOutcome:
     steps: int = 0
     tool_calls: int = 0
     usage: Usage = field(default_factory=Usage)
-    stop_reason: str = ""  # finished | max_steps | time_limit | budget_exceeded | model_error
+    stop_reason: str = ""  # finished | max_steps | time_limit | no_action | budget_exceeded | model_error
     error: str = ""
     final_message: str = ""
     trajectory: list[dict] = field(default_factory=list)
@@ -66,7 +71,31 @@ def truncate(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     half = limit // 2
-    return f"{text[:half]}\n... [{len(text) - limit} characters truncated] ...\n{text[-half:]}"
+    return (
+        f"{text[:half]}\n... [{len(text) - limit} characters truncated. Use grep -n or sed -n 'START,ENDp' "
+        f"FILE to see specific lines] ...\n{text[-half:]}"
+    )
+
+
+ELIDED = "[older output elided to fit the context window]"
+REPEAT_NOTE = "[note: you already ran this exact command and got the same output. Try a different approach.]"
+
+
+def fit_context(messages: list[dict], max_chars: int, keep_last: int = 4) -> list[dict]:
+    """Copy of `messages` with the oldest tool outputs elided until the total fits in `max_chars`.
+
+    The system prompt, the task and the last `keep_last` messages are never elided."""
+    size = sum(len(m.get("content") or "") for m in messages)
+    if size <= max_chars:
+        return messages
+    out = [dict(m) for m in messages]
+    for m in out[2 : max(2, len(out) - keep_last)]:
+        if size <= max_chars:
+            break
+        if m["role"] == "tool" and m["content"] != ELIDED:
+            size -= len(m["content"]) - len(ELIDED)
+            m["content"] = ELIDED
+    return out
 
 
 def message_text(content) -> str:
@@ -113,6 +142,7 @@ def run_agent(
     out.trajectory = messages
     start = time.monotonic()
     nudges = 0
+    seen: dict[str, str] = {}  # command -> last output, to flag exact repeats
     while True:
         if out.steps >= cfg.max_steps:
             out.stop_reason = "max_steps"
@@ -122,7 +152,16 @@ def run_agent(
             break
         try:
             resp, usage = client.chat(
-                messages, tools=[BASH_TOOL], temperature=cfg.temperature, top_p=1.0, max_tokens=cfg.max_tokens
+                fit_context(messages, cfg.max_context_chars),
+                tools=[BASH_TOOL],
+                temperature=cfg.temperature,
+                top_p=1.0,
+                max_tokens=cfg.max_tokens,
+                **(
+                    {"extra_body": {"think": cfg.think}}
+                    if cfg.think is not None and client.model.is_local
+                    else {}
+                ),
             )
         except BudgetExceeded as e:
             out.stop_reason, out.error = "budget_exceeded", str(e)
@@ -165,5 +204,9 @@ def run_agent(
                     on_step(out.steps, command)
                 r = sandbox.exec(command)
                 result = truncate(r.output, cfg.max_output_chars) + f"\n[exit code {r.exit_code}]"
+                if seen.get(command) == result:
+                    result += "\n" + REPEAT_NOTE
+                else:
+                    seen[command] = result
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
     return out

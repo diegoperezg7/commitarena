@@ -165,6 +165,8 @@ class Sandbox:
 
     def exec(self, command: str, timeout: int | None = None) -> ExecResult:
         t = int(timeout or self.config.command_timeout)
+        if "\x00" in command:
+            return ExecResult(126, "error: the command contains a null byte; remove it and try again")
         try:
             cp = _docker(
                 "exec", self.name, "timeout", "-s", "KILL", str(t), "bash", "-c", "exec 2>&1\n" + command,

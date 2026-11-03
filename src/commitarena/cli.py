@@ -141,6 +141,9 @@ def run(
     price: Annotated[
         list[str] | None, typer.Option(help="Price override, MODEL=IN,OUT in USD per 1M tokens (repeatable).")
     ] = None,
+    think: Annotated[
+        bool | None, typer.Option("--think/--no-think", help="Ollama only: turn model thinking on or off.")
+    ] = None,
     cpus: Annotated[float, typer.Option(help="CPU limit of the sandbox.")] = 2.0,
     memory: Annotated[str, typer.Option(help="Memory limit of the sandbox.")] = "2g",
     command_timeout: Annotated[int, typer.Option(help="Seconds per agent command.")] = 120,
@@ -197,7 +200,7 @@ def run(
 
     results, abort = run_suite(
         task_list, specs, out, budget=budget, context=ctx, strip_context_files=strip_context_files,
-        agent_config=AgentConfig(max_steps=max_steps, max_wall_time=max_time),
+        agent_config=AgentConfig(max_steps=max_steps, max_wall_time=max_time, think=think),
         sandbox_config=SandboxConfig(cpus=cpus, memory=memory, command_timeout=command_timeout),
         cutoffs=cutoffs, on_result=on_result, on_start=on_start, on_step=on_step,
     )  # fmt: skip

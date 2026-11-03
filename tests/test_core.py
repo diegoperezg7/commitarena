@@ -254,3 +254,40 @@ def test_message_text_handles_block_lists():
         {"type": "text", "text": "done"},
     ]
     assert message_text(blocks) == "done"
+
+
+def test_null_byte_command_is_a_failed_step_not_a_crash():
+    from commitarena.sandbox import Sandbox
+
+    sb = Sandbox("unused-image")
+    r = sb.exec("echo a\x00b")
+    assert r.exit_code == 126 and "null byte" in r.output
+
+
+def test_repeated_command_gets_a_note_and_context_is_trimmed(scripted):
+    from commitarena.agent import ELIDED, REPEAT_NOTE, fit_context
+
+    c = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
+    c._client = scripted(
+        [fake_response(tool_calls=["ls"]), fake_response(tool_calls=["ls"]), fake_response("ok")]
+    )
+    out = run_agent(c, FakeSandbox(), "x")
+    tools = [m["content"] for m in out.trajectory if m["role"] == "tool"]
+    assert REPEAT_NOTE not in tools[0] and REPEAT_NOTE in tools[1]
+    msgs = [{"role": "system", "content": "s"}, {"role": "user", "content": "task"}]
+    msgs += [{"role": "tool", "content": "x" * 1000} for _ in range(8)]
+    fitted = fit_context(msgs, 5000)
+    assert sum(len(m["content"]) for m in fitted) <= 5000
+    assert fitted[1]["content"] == "task" and fitted[-1]["content"] == "x" * 1000
+    assert ELIDED in fitted[2]["content"] and msgs[2]["content"] == "x" * 1000  # original untouched
+
+
+def test_think_flag_only_sent_to_local_models(scripted):
+    c = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
+    c._client = scripted([fake_response("done")])
+    run_agent(c, FakeSandbox(), "x", AgentConfig(think=False))
+    assert c._client.calls[0]["extra_body"] == {"think": False}
+    c2 = ChatClient(ModelSpec.parse("mistral/codestral-latest"), Budget())
+    c2._client = scripted([fake_response("done")])
+    run_agent(c2, FakeSandbox(), "x", AgentConfig(think=False))
+    assert "extra_body" not in c2._client.calls[0]

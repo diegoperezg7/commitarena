@@ -35,6 +35,8 @@ PRICES: dict[str, tuple[float, float]] = {
     "mistral/codestral-2508": (0.30, 0.90),
     "mistral/mistral-small-latest": (0.15, 0.60),
     "mistral/mistral-small-2603": (0.15, 0.60),
+    "mistral/ministral-8b-latest": (0.15, 0.15),
+    "mistral/ministral-8b-2512": (0.15, 0.15),
     "mistral/mistral-large-4": (0.70, 2.10),
     "mistral/mistral-large-4-0": (0.70, 2.10),
 }
