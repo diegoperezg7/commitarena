@@ -69,8 +69,23 @@ def truncate(text: str, limit: int) -> str:
     return f"{text[:half]}\n... [{len(text) - limit} characters truncated] ...\n{text[-half:]}"
 
 
+def message_text(content) -> str:
+    """Reply text. Some providers return a list of blocks (e.g. thinking + text); keep the text ones."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    parts = []
+    for block in content:
+        kind = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
+        text = block.get("text") if isinstance(block, dict) else getattr(block, "text", None)
+        if kind in (None, "text") and isinstance(text, str):
+            parts.append(text)
+    return "".join(parts)
+
+
 def _assistant_dict(msg) -> dict:
-    d: dict = {"role": "assistant", "content": msg.content or ""}
+    d: dict = {"role": "assistant", "content": message_text(msg.content)}
     if msg.tool_calls:
         d["tool_calls"] = [
             {
@@ -119,12 +134,13 @@ def run_agent(
             break
         msg = resp.choices[0].message
         finish = getattr(resp.choices[0], "finish_reason", None)
-        if not msg.tool_calls and (finish == "length" or not (msg.content or "").strip()):
+        text = message_text(msg.content)
+        if not msg.tool_calls and (finish == "length" or not text.strip()):
             # Thinking models can spend the whole reply budget reasoning. Ask once more instead of
             # treating an empty or truncated reply as "done". Same rule for every model.
             if nudges < MAX_NUDGES:
                 nudges += 1
-                messages.append({"role": "assistant", "content": (msg.content or "").strip() or "(no reply)"})
+                messages.append({"role": "assistant", "content": text.strip() or "(no reply)"})
                 messages.append({"role": "user", "content": NUDGE})
                 continue
             out.stop_reason = "no_action"
@@ -132,7 +148,7 @@ def run_agent(
         messages.append(_assistant_dict(msg))
         if not msg.tool_calls:
             out.stop_reason = "finished"
-            out.final_message = msg.content or ""
+            out.final_message = text
             break
         nudges = 0
         for tc in msg.tool_calls:

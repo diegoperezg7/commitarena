@@ -243,3 +243,14 @@ def test_agent_nudges_after_empty_or_truncated_reply(scripted):
     c2 = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
     c2._client = scripted([fake_response("")] * 3)
     assert run_agent(c2, FakeSandbox(), "x").stop_reason == "no_action"
+
+
+def test_message_text_handles_block_lists():
+    from commitarena.agent import message_text
+
+    assert message_text(None) == "" and message_text("hi") == "hi"
+    blocks = [
+        {"type": "thinking", "thinking": [{"type": "text", "text": "hmm"}]},
+        {"type": "text", "text": "done"},
+    ]
+    assert message_text(blocks) == "done"
