@@ -297,7 +297,14 @@ def demo(
         webbrowser.open(path.resolve().as_uri())
 
 
+def _sigterm(signum, frame):  # noqa: ARG001
+    raise KeyboardInterrupt
+
+
 def main() -> None:
+    import signal
+
+    signal.signal(signal.SIGTERM, _sigterm)  # so sandboxes are removed on kill
     try:
         app()
     except CommitArenaError as e:

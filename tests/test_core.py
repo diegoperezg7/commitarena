@@ -230,3 +230,16 @@ def test_load_tasks_errors(tmp_path):
 
     with pytest.raises(TaskError, match="commitarena mine"):
         load_tasks(tmp_path / "missing.json")
+
+
+def test_agent_nudges_after_empty_or_truncated_reply(scripted):
+    cut = fake_response("")
+    cut.choices[0].finish_reason = "length"
+    c = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
+    c._client = scripted([cut, fake_response(tool_calls=["ls"]), fake_response("done")])
+    sb = FakeSandbox()
+    out = run_agent(c, sb, "x")
+    assert out.stop_reason == "finished" and sb.commands == ["ls"] and out.steps == 3
+    c2 = ChatClient(ModelSpec.parse("ollama/qwen3:4b"), Budget())
+    c2._client = scripted([fake_response("")] * 3)
+    assert run_agent(c2, FakeSandbox(), "x").stop_reason == "no_action"

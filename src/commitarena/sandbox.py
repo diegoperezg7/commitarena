@@ -127,7 +127,7 @@ class Sandbox:
     def start(self) -> None:
         c = self.config
         cp = _docker(
-            "run", "-d", "--rm", "--name", self.name,
+            "run", "-d", "--rm", "--name", self.name, "--label", "commitarena=sandbox",
             "--network", c.network,
             "--cpus", str(c.cpus), "--memory", c.memory, "--memory-swap", c.memory,
             "--pids-limit", str(c.pids_limit),

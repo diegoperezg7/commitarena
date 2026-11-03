@@ -21,6 +21,12 @@ Work in small steps: read the failing tests, find the cause in the source code, 
 and run the tests. Do not modify test files: they are restored before scoring. When the tests pass, \
 reply with a one-line summary and no tool call to finish."""
 
+NUDGE = (
+    "Your last reply was empty or cut off at the token limit. Keep your reasoning short and call the bash "
+    "tool, or reply with a one-line summary if you are done."
+)
+MAX_NUDGES = 2  # consecutive empty or truncated replies before giving up
+
 BASH_TOOL = {
     "type": "function",
     "function": {
@@ -91,6 +97,7 @@ def run_agent(
     out = AgentOutcome()
     out.trajectory = messages
     start = time.monotonic()
+    nudges = 0
     while True:
         if out.steps >= cfg.max_steps:
             out.stop_reason = "max_steps"
@@ -111,11 +118,23 @@ def run_agent(
             out.stop_reason, out.error = "model_error", "empty response"
             break
         msg = resp.choices[0].message
+        finish = getattr(resp.choices[0], "finish_reason", None)
+        if not msg.tool_calls and (finish == "length" or not (msg.content or "").strip()):
+            # Thinking models can spend the whole reply budget reasoning. Ask once more instead of
+            # treating an empty or truncated reply as "done". Same rule for every model.
+            if nudges < MAX_NUDGES:
+                nudges += 1
+                messages.append({"role": "assistant", "content": (msg.content or "").strip() or "(no reply)"})
+                messages.append({"role": "user", "content": NUDGE})
+                continue
+            out.stop_reason = "no_action"
+            break
         messages.append(_assistant_dict(msg))
         if not msg.tool_calls:
             out.stop_reason = "finished"
             out.final_message = msg.content or ""
             break
+        nudges = 0
         for tc in msg.tool_calls:
             out.tool_calls += 1
             try:
