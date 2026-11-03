@@ -116,6 +116,7 @@ select { font: .85rem var(--sans); color: var(--text); background: var(--surface
 .pane pre .h { color: var(--accent); }
 .pane pre .f { color: var(--muted); font-weight: 600; }
 .empty { color: var(--muted); padding: 12px; font-size: .85rem; }
+.note { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; font-size: .85rem; color: var(--muted); background: var(--surface); }
 .meta { color: var(--muted); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 a { color: var(--accent); }
 footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--border); padding-top: 14px; }
@@ -161,6 +162,7 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
     <h1 data-i="title"></h1>
     <p class="sub" data-i="lead"></p>
     <div class="meta" id="meta" style="margin-top:10px"></div>
+    <p class="note" id="note" style="display:none"></p>
   </section>
 
   <section class="kpis" id="kpis"></section>
@@ -295,6 +297,9 @@ footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--bor
     if (m.hardware) metaBits.push("<span>" + esc(t("hw")) + ": " + esc(m.hardware) + "</span>");
     if (sb.network) metaBits.push("<span>" + esc(t("sandbox")) + ": --network " + esc(sb.network) + ", " + esc(sb.cpus) + " CPU, " + esc(sb.memory) + "</span>");
     document.getElementById("meta").innerHTML = metaBits.join("");
+    var note = m["note_" + lang] || m.note || "";
+    var noteEl = document.getElementById("note");
+    noteEl.textContent = note; noteEl.style.display = note ? "block" : "none";
 
     var best = D.board.length ? D.board[0] : null;
     var total = D.board.reduce(function (a, b) { return a + b.cost; }, 0);

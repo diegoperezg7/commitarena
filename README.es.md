@@ -72,13 +72,20 @@ Leaderboard
 ┃ model                    ┃  pass ┃ rate ┃ before cutoff ┃ after cutoff ┃ cost $ ┃    tokens ┃ avg s ┃ avg steps ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━┩
 │ mistral/mistral-large-4  │ 11/11 │ 100% │           8/8 │          3/3 │ 0.5412 │   689,491 │    79 │      12.4 │
-│ ollama/qwen3:4b-16k      │   0/2 │   0% │             - │          0/2 │ 0.0000 │    29,682 │   938 │       3.0 │
+│ ollama/qwen3:4b-16k      │   0/3 │   0% │             - │          0/3 │ 0.0000 │    44,658 │  1055 │       3.0 │
 │ mistral/codestral-latest │  0/11 │   0% │           0/4 │          0/7 │ 0.9241 │ 2,945,928 │    88 │      29.1 │
 └──────────────────────────┴───────┴──────┴───────────────┴──────────────┴────────┴───────────┴───────┴───────────┘
 ```
 <!-- demo:end -->
 
 <p align="center"><a href="https://diegoperezg7.github.io/commitarena/"><img src="docs/assets/report-dark.png" alt="report" width="760"></a></p>
+
+Cómo leerlo: con el mismo prompt, herramienta, límites y sandbox, Mistral Large 4 arregló los 11 bugs,
+incluidos los 3 posteriores a su lanzamiento (octubre de 2026), así que los resolvió, no los recordó.
+Codestral gastó más tokens y más dinero y no arregló ninguno: casi siempre repetía el mismo `sed` o `grep`
+hasta el límite de 30 llamadas. qwen3:4b en Ollama corrió 3 tareas y nunca llamó a la herramienta, porque
+gastaba los 4096 tokens de cada respuesta pensando. mistral-small-latest respondió 429 toda la sesión y no
+aparece. Tres tareas después del corte es una muestra pequeña: es una señal, no un veredicto.
 
 ## Úsalo en tu repo
 
