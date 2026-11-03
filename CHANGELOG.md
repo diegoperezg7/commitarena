@@ -4,8 +4,8 @@
 
 Restore sqlparse license notice verbatim; fix leaderboard overflow.
 
-- `src/commitarena/demo/LICENSE-sqlparse` is again a byte-for-byte copy of the upstream BSD-3-Clause license,
-  copyright notice included, as the license requires.
+- Restore the sqlparse BSD-3 notice verbatim: `src/commitarena/demo/LICENSE-sqlparse` is again a byte-for-byte copy of the upstream BSD-3-Clause license,
+  copyright notice included, as the license requires. See THIRD_PARTY_NOTICES.md.
 - Report: the leaderboard fits at 1280 px (the "Ended by" column wraps instead of pushing "Cutoff" out of the
   card), and the page no longer overflows horizontally at 390 px; wide tables scroll inside their card.
 
