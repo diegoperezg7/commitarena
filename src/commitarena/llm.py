@@ -111,7 +111,7 @@ class ChatClient:
 
     model: ModelSpec
     budget: Budget = field(default_factory=Budget)
-    max_retries: int = 8
+    max_retries: int = 12
     timeout: float = 600.0
     _client: Any = None
     _connected: bool = False  # a local server that answered once gets retries on later drops

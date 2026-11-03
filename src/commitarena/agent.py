@@ -107,7 +107,7 @@ def run_agent(
             break
         try:
             resp, usage = client.chat(
-                messages, tools=[BASH_TOOL], temperature=cfg.temperature, max_tokens=cfg.max_tokens
+                messages, tools=[BASH_TOOL], temperature=cfg.temperature, top_p=1.0, max_tokens=cfg.max_tokens
             )
         except BudgetExceeded as e:
             out.stop_reason, out.error = "budget_exceeded", str(e)
