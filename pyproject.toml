@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "commitarena"
+version = "0.1.0"
+description = "Your git history is the benchmark. Replay real bug fixes against any model, in a sandbox with no network."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Diego Pérez" }]
+requires-python = ">=3.11"
+keywords = ["llm", "benchmark", "agents", "evaluation", "swe-bench", "git", "docker"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "openai==3.42.1",
+    "rich==15.0.0",
+    "typer==0.27.3",
+]
+
+[project.urls]
+Homepage = "https://diegoperezg7.github.io/commitarena/"
+Source = "https://github.com/diegoperezg7/commitarena"
+Issues = "https://github.com/diegoperezg7/commitarena/issues"
+
+[project.scripts]
+commitarena = "commitarena.cli:main"
+
+[dependency-groups]
+dev = ["pytest==9.2.0", "ruff==0.17.3"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "README.es.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/commitarena"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["docker: needs a running Docker daemon (Linux CI only)"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="160" viewBox="0 0 880 160" role="img" aria-label="commitarena">
+  <style>
+    .t { font: 700 52px Inter, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #111116; letter-spacing: -1px; }
+    .s { font: 400 19px Inter, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #5c5d66; }
+    @media (prefers-color-scheme: dark) { .t { fill: #f4f5f8; } .s { fill: #a3a4ae; } }
+  </style>
+  <g transform="translate(16 28) scale(4.25)">
+    <rect x="1" y="1" width="22" height="22" rx="6" fill="#3b5bd4"/>
+    <circle cx="12" cy="12" r="3.4" fill="none" stroke="#ffffff" stroke-width="2.2"/>
+    <path d="M4.8 12h3.6M15.6 12h3.6" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <text class="t" x="136" y="82">commitarena</text>
+  <text class="s" x="138" y="118">Your git history is the benchmark. Replay real bug fixes against any model.</text>
+</svg>

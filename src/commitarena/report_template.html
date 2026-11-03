@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>commitarena report</title>
+<meta name="description" content="commitarena: real bug fixes from git history replayed against LLMs in a sandbox with no network.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='6' fill='%233b5bd4'/%3E%3Ccircle cx='12' cy='12' r='3.4' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='M4.8 12h3.6M15.6 12h3.6' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f7f7f9; --border: #e4e4e9;
+  --text: #111116; --muted: #5c5d66;
+  --accent: #3b5bd4; --accent-soft: rgba(59, 91, 212, .1); --tile: #3b5bd4; --tile-fg: #ffffff;
+  --ok: #11813c; --ok-soft: rgba(17, 129, 60, .1); --warn: #a45e00; --err: #c22826; --err-soft: rgba(194, 40, 38, .09);
+  --s-before: #3b5bd4; --s-after: #c2549a;
+  --add: rgba(17, 129, 60, .1); --del: rgba(194, 40, 38, .09);
+  --shadow: 0 1px 2px rgba(17, 17, 22, .04), 0 4px 16px rgba(17, 17, 22, .05);
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #0d0d10; --surface-2: #141418; --border: #28282e;
+    --text: #f4f5f8; --muted: #a3a4ae;
+    --accent: #88a9ff; --accent-soft: rgba(136, 169, 255, .14);
+    --ok: #5fd37f; --ok-soft: rgba(95, 211, 127, .13); --warn: #f7b83d; --err: #f66d67; --err-soft: rgba(246, 109, 103, .13);
+    --s-before: #6684ec; --s-after: #cc5ea6;
+    --add: rgba(95, 211, 127, .12); --del: rgba(246, 109, 103, .12);
+    --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #0d0d10; --surface-2: #141418; --border: #28282e;
+  --text: #f4f5f8; --muted: #a3a4ae;
+  --accent: #88a9ff; --accent-soft: rgba(136, 169, 255, .14);
+  --ok: #5fd37f; --ok-soft: rgba(95, 211, 127, .13); --warn: #f7b83d; --err: #f66d67; --err-soft: rgba(246, 109, 103, .13);
+  --s-before: #6684ec; --s-after: #cc5ea6;
+  --add: rgba(95, 211, 127, .12); --del: rgba(246, 109, 103, .12);
+  --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 28px; min-width: 0; }
+header.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
+.brand svg { width: 32px; height: 32px; }
+.spacer { flex: 1; }
+.controls { display: flex; gap: 6px; }
+button.tog { font: 500 .8rem var(--sans); color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+button.tog:hover { border-color: var(--accent); }
+button.tog:focus-visible, .cell:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1 { font-size: 1.6rem; line-height: 1.2; letter-spacing: -.02em; margin: 0 0 6px; }
+h2 { font-size: 1.05rem; margin: 0 0 4px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0; }
+.badge { display: inline-block; font: 600 .7rem var(--sans); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; vertical-align: middle; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); min-width: 0; }
+.card > p.sub { margin-bottom: 14px; font-size: .88rem; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { padding: 14px 16px; }
+.kpi .v { font: 600 1.5rem var(--mono); letter-spacing: -.02em; }
+.kpi .l { color: var(--muted); font-size: .8rem; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: .78rem; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-size: .82rem; }
+tr:last-child td { border-bottom: 0; }
+.rank { color: var(--muted); font-family: var(--mono); }
+.model { font-family: var(--mono); font-size: .82rem; }
+.rate { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.meter { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+/* cutoff chart */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cgroup { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cgroup:last-child { border-bottom: 0; }
+.cgroup .name { font-family: var(--mono); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; }
+.cgroup .name small { display: block; font-family: var(--sans); color: var(--muted); font-size: .74rem; }
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; align-items: center; }
+.track { height: 12px; position: relative; border-left: 1px solid var(--border); }
+.fill { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar .lab { font: .78rem var(--mono); color: var(--text); }
+.bar .lab em { color: var(--muted); font-style: normal; }
+.bar[data-tip] { cursor: default; }
+/* matrix */
+.matrix td.task { font-family: var(--mono); font-size: .8rem; }
+.matrix td.task small { display: block; font-family: var(--sans); color: var(--muted); }
+.cell { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 64px; padding: 4px 8px;
+  border-radius: 7px; font: 600 .74rem var(--sans); border: 1px solid transparent; cursor: pointer; background: none; color: inherit; }
+.cell.pass { color: var(--ok); background: var(--ok-soft); }
+.cell.fail { color: var(--err); background: var(--err-soft); }
+.cell.sel { border-color: var(--accent); }
+.cell svg { width: 12px; height: 12px; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+/* diff */
+.diffhead { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+select { font: .85rem var(--sans); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; max-width: 100%; }
+.diffs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.pane { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; min-width: 0; }
+.pane h3 { margin: 0; font-size: .8rem; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); display: flex; gap: 8px; align-items: center; }
+.pane pre { margin: 0; padding: 10px 0; font: .74rem/1.55 var(--mono); overflow: auto; max-height: 520px; }
+.pane pre span { display: block; padding: 0 12px; white-space: pre; }
+.pane pre .a { background: var(--add); }
+.pane pre .d { background: var(--del); }
+.pane pre .h { color: var(--accent); }
+.pane pre .f { color: var(--muted); font-weight: 600; }
+.empty { color: var(--muted); padding: 12px; font-size: .85rem; }
+.meta { color: var(--muted); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+a { color: var(--accent); }
+footer { color: var(--muted); font-size: .78rem; border-top: 1px solid var(--border); padding-top: 14px; }
+#tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 9px; font-size: .78rem; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: none; max-width: 260px; }
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .diffs { grid-template-columns: minmax(0, 1fr); }
+  .cgroup { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 1.3rem; }
+  .card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="g-commit" viewBox="0 0 24 24">
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="var(--tile)"/>
+      <circle cx="12" cy="12" r="3.4" fill="none" stroke="var(--tile-fg)" stroke-width="2.2"/>
+      <path d="M4.8 12h3.6M15.6 12h3.6" fill="none" stroke="var(--tile-fg)" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-ok" viewBox="0 0 12 12"><path d="M2.5 6.2l2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg aria-hidden="true"><use href="#g-commit"/></svg>commitarena</div>
+    <div class="spacer"></div>
+    <div class="controls">
+      <button class="tog" id="lang" type="button" aria-label="Language">ES</button>
+      <button class="tog" id="theme" type="button" aria-label="Theme"></button>
+    </div>
+  </header>
+
+  <section>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="lead"></p>
+    <div class="meta" id="meta" style="margin-top:10px"></div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <h2 data-i="board"></h2>
+    <p class="sub" data-i="boardSub"></p>
+    <div class="scroll"><table id="board"></table></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i="cut"></h2>
+    <p class="sub" data-i="cutSub"></p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--s-before)"></i><b data-i="before"></b></span>
+      <span><i class="sw" style="background:var(--s-after)"></i><b data-i="after"></b></span>
+    </div>
+    <div id="cut"></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i="matrix"></h2>
+    <p class="sub" data-i="matrixSub"></p>
+    <div class="scroll"><table class="matrix" id="matrix"></table></div>
+  </section>
+
+  <section class="card" id="diffcard">
+    <h2 data-i="diff"></h2>
+    <p class="sub" data-i="diffSub"></p>
+    <div class="diffhead">
+      <select id="selTask" aria-label="Task"></select>
+      <select id="selModel" aria-label="Model"></select>
+      <span class="meta" id="diffmeta"></span>
+    </div>
+    <div class="diffs">
+      <div class="pane"><h3><span data-i="modelPatch"></span><span id="mname" class="model"></span></h3><pre id="pModel"></pre></div>
+      <div class="pane"><h3><span data-i="humanPatch"></span><a id="clink" target="_blank" rel="noopener"></a></h3><pre id="pGold"></pre></div>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" role="tooltip"></div>
+<script type="application/json" id="data">/*__DATA__*/{}</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("data").textContent);
+  var T = {
+    en: {
+      title: "Which model fixes your real bugs?",
+      lead: "Every task is a real bug fix from this repository's git history. Each model gets the failing tests, the same minimal agent loop with one bash tool, and a container with no network. The original tests are restored before scoring.",
+      board: "Leaderboard", boardSub: "Pass = every fail-to-pass test passes and no pass-to-pass test breaks. Cost is what the provider reports or tokens times list price; local models cost 0.",
+      cut: "Solved or remembered?", cutSub: "Pass rate on fixes committed before the model's training cutoff (could be memorized) versus after it (cannot be). Cutoff dates are configurable; by default the model's release date is used as an upper bound.",
+      before: "Before cutoff", after: "After cutoff",
+      matrix: "Task x model", matrixSub: "Tasks sorted by commit date. Select a cell to compare the model's diff with the human fix.",
+      diff: "Model diff next to the human fix", diffSub: "Only changes to non-test files are scored; edits to tests are discarded.",
+      modelPatch: "Model", humanPatch: "Human fix",
+      m: "Model", pass: "Pass", rate: "Rate", cost: "Cost", tokens: "Tokens", time: "Avg time", steps: "Avg steps", cutoff: "Cutoff",
+      task: "Task", date: "Date", tasks: "tasks", models: "models", best: "best pass rate", spent: "total cost (USD)",
+      none: "No changes to non-test files.", nores: "This pair was not run.", recorded: "Recorded run",
+      ok: "pass", fail: "fail", files: "files", n: "n",
+      genBy: "Generated by commitarena", hw: "Hardware", ver: "Version", ran: "Run date", sandbox: "Sandbox",
+      stop: "stop", broken: "broken", f2p: "fail to pass", unknown: "no cutoff set"
+    },
+    es: {
+      title: "¿Qué modelo arregla tus bugs reales?",
+      lead: "Cada tarea es un fix real del historial de git de este repositorio. Cada modelo recibe los tests que fallan, el mismo bucle de agente mínimo con una sola herramienta bash y un contenedor sin red. Los tests originales se restauran antes de puntuar.",
+      board: "Clasificación", boardSub: "Acierto = pasan todos los tests fail-to-pass y no se rompe ningún pass-to-pass. El coste es el que informa el proveedor o tokens por precio de lista; los modelos locales cuestan 0.",
+      cut: "¿Lo resuelve o lo recuerda?", cutSub: "Acierto en fixes anteriores a la fecha de corte del modelo (podría haberlos memorizado) frente a posteriores (no puede). Las fechas se configuran; por defecto se usa la fecha de lanzamiento como cota superior.",
+      before: "Antes del corte", after: "Después del corte",
+      matrix: "Tarea x modelo", matrixSub: "Tareas ordenadas por fecha del commit. Elige una celda para comparar el diff del modelo con el fix humano.",
+      diff: "Diff del modelo junto al fix humano", diffSub: "Solo se puntúan los cambios en ficheros que no son de test; lo que toque en los tests se descarta.",
+      modelPatch: "Modelo", humanPatch: "Fix humano",
+      m: "Modelo", pass: "Aciertos", rate: "Tasa", cost: "Coste", tokens: "Tokens", time: "Tiempo medio", steps: "Pasos medios", cutoff: "Corte",
+      task: "Tarea", date: "Fecha", tasks: "tareas", models: "modelos", best: "mejor tasa de acierto", spent: "coste total (USD)",
+      none: "Sin cambios en ficheros que no son de test.", nores: "Esta pareja no se ejecutó.", recorded: "Ejecución grabada",
+      ok: "pasa", fail: "falla", files: "ficheros", n: "n",
+      genBy: "Generado con commitarena", hw: "Hardware", ver: "Versión", ran: "Fecha", sandbox: "Sandbox",
+      stop: "parada", broken: "rotos", f2p: "fail to pass", unknown: "sin fecha de corte"
+    }
+  };
+  var lang = "en";
+  try { lang = localStorage.getItem("ca-lang") || ((navigator.language || "").slice(0, 2) === "es" ? "es" : "en"); } catch (e) {}
+  if (!T[lang]) lang = "en";
+  function t(k) { return T[lang][k] || k; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+  function pct(x) { return Math.round(x * 100) + "%"; }
+  function fmtNum(n) { return Number(n || 0).toLocaleString(lang === "es" ? "es-ES" : "en-US"); }
+  function money(x) { return "$" + Number(x || 0).toFixed(x < 0.01 && x > 0 ? 4 : 2); }
+  function short(id) { var p = id.split("-"); return p[p.length - 1]; }
+  var R = {};
+  D.results.forEach(function (r) { R[r.task_id + "|" + r.model] = r; });
+  var sel = { task: null, model: null };
+  var firstPass = D.results.filter(function (r) { return r.passed; })[0] || D.results[0];
+  if (firstPass) { sel.task = firstPass.task_id; sel.model = firstPass.model; }
+
+  // theme
+  var root = document.documentElement;
+  function curTheme() { var a = root.getAttribute("data-theme"); if (a) return a; return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+  try { var st = localStorage.getItem("ca-theme"); if (st) root.setAttribute("data-theme", st); } catch (e) {}
+  var themeBtn = document.getElementById("theme");
+  function themeLabel() { themeBtn.textContent = curTheme() === "dark" ? (lang === "es" ? "Claro" : "Light") : (lang === "es" ? "Oscuro" : "Dark"); }
+  themeBtn.onclick = function () { var n = curTheme() === "dark" ? "light" : "dark"; root.setAttribute("data-theme", n); try { localStorage.setItem("ca-theme", n); } catch (e) {} themeLabel(); };
+  document.getElementById("lang").onclick = function () { lang = lang === "en" ? "es" : "en"; try { localStorage.setItem("ca-lang", lang); } catch (e) {} render(); };
+
+  var tip = document.getElementById("tip");
+  document.addEventListener("mousemove", function (e) {
+    var el = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (!el) { tip.style.display = "none"; return; }
+    tip.innerHTML = el.getAttribute("data-tip"); tip.style.display = "block";
+    var x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = e.clientY + 16;
+    if (y + tip.offsetHeight > innerHeight) y = e.clientY - tip.offsetHeight - 10;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  });
+
+  function render() {
+    root.lang = lang;
+    document.getElementById("lang").textContent = lang === "en" ? "ES" : "EN";
+    themeLabel();
+    document.querySelectorAll("[data-i]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i")); });
+    var m = D.meta || {};
+    var sb = m.sandbox || {};
+    var metaBits = [];
+    if (m.recorded) metaBits.push('<span class="badge">' + esc(t("recorded")) + "</span>");
+    if (m.repo) metaBits.push("<span>" + esc(m.repo) + (m.repo_license ? " (" + esc(m.repo_license) + ")" : "") + "</span>");
+    if (m.updated_at) metaBits.push("<span>" + esc(t("ran")) + ": " + esc(m.updated_at.slice(0, 10)) + "</span>");
+    if (m.version) metaBits.push("<span>commitarena " + esc(m.version) + "</span>");
+    if (m.hardware) metaBits.push("<span>" + esc(t("hw")) + ": " + esc(m.hardware) + "</span>");
+    if (sb.network) metaBits.push("<span>" + esc(t("sandbox")) + ": --network " + esc(sb.network) + ", " + esc(sb.cpus) + " CPU, " + esc(sb.memory) + "</span>");
+    document.getElementById("meta").innerHTML = metaBits.join("");
+
+    var best = D.board.length ? D.board[0] : null;
+    var total = D.board.reduce(function (a, b) { return a + b.cost; }, 0);
+    document.getElementById("kpis").innerHTML = [
+      [D.tasks.length, t("tasks")], [D.models.length, t("models")],
+      [best ? pct(best.rate) : "-", t("best") + (best ? " · " + best.model : "")], [money(total), t("spent")]
+    ].map(function (k) { return '<div class="card kpi"><div class="v">' + esc(k[0]) + '</div><div class="l">' + esc(k[1]) + "</div></div>"; }).join("");
+
+    var h = "<thead><tr><th>#</th><th>" + t("m") + '</th><th class="num">' + t("pass") + '</th><th class="num">' + t("rate") + '</th><th class="num">' + t("cost") + '</th><th class="num">' + t("tokens") + '</th><th class="num">' + t("time") + '</th><th class="num">' + t("steps") + "</th><th>" + t("cutoff") + "</th></tr></thead><tbody>";
+    D.board.forEach(function (r, i) {
+      h += '<tr><td class="rank">' + (i + 1) + '</td><td class="model">' + esc(r.model) + '</td><td class="num">' + r.passed + "/" + r.total +
+        '</td><td class="num"><div class="rate"><span>' + pct(r.rate) + '</span><span class="meter"><i style="width:' + (r.rate * 100) + '%"></i></span></div></td><td class="num">' + money(r.cost) +
+        '</td><td class="num">' + fmtNum(r.tokens) + '</td><td class="num">' + Math.round(r.avg_time) + ' s</td><td class="num">' + r.avg_steps.toFixed(1) + "</td><td>" + esc(r.cutoff || t("unknown")) + "</td></tr>";
+    });
+    document.getElementById("board").innerHTML = h + "</tbody>";
+
+    var c = "";
+    D.board.forEach(function (r) {
+      c += '<div class="cgroup"><div class="name">' + esc(r.model) + "<small>" + t("cutoff") + ": " + esc(r.cutoff || t("unknown")) + '</small></div><div class="bars">';
+      [["before", "--s-before"], ["after", "--s-after"]].forEach(function (s) {
+        var v = r[s[0]], rate = v.total ? v.passed / v.total : 0;
+        var tipTxt = "<b>" + esc(r.model) + "</b><br>" + esc(t(s[0])) + ": " + v.passed + "/" + v.total + (v.total ? " (" + pct(rate) + ")" : "");
+        c += '<div class="bar" data-tip="' + esc(tipTxt) + '"><div class="track"><div class="fill" style="width:' + (v.total ? Math.max(rate * 100, 0.6) : 0) + "%;background:var(" + s[1] + ')"></div></div><div class="lab">' +
+          (v.total ? pct(rate) + " <em>" + v.passed + "/" + v.total + "</em>" : "<em>n = 0</em>") + "</div></div>";
+      });
+      c += "</div></div>";
+    });
+    document.getElementById("cut").innerHTML = c;
+
+    var mx = "<thead><tr><th>" + t("task") + "</th><th>" + t("date") + "</th>";
+    D.models.forEach(function (mm) { mx += "<th>" + esc(mm) + "</th>"; });
+    mx += "</tr></thead><tbody>";
+    D.tasks.forEach(function (tk) {
+      mx += '<tr><td class="task">' + esc(short(tk.id)) + "<small>" + esc((tk.files || []).join(", ")) + "</small></td><td>" + esc(tk.date.slice(0, 10)) + "</td>";
+      D.models.forEach(function (mm) {
+        var r = R[tk.id + "|" + mm];
+        var cut = D.cutoffs[mm];
+        var side = cut ? (tk.date.slice(0, 10) < cut ? "before" : "after") : null;
+        var dot = side ? '<i class="dot" style="background:var(--s-' + side + ')" title="' + esc(t(side)) + '"></i>' : "";
+        if (!r) { mx += "<td>" + dot + '<span class="empty">-</span></td>'; return; }
+        var tipTxt = "<b>" + esc(r.passed ? t("ok") : t("fail")) + "</b> · " + r.fail_to_pass_passed + "/" + r.fail_to_pass_total + " " + t("f2p") + ", " + r.pass_to_pass_failed + " " + t("broken") + "<br>" + r.steps + " " + t("steps").toLowerCase() + ", " + Math.round(r.wall_time_s) + " s, " + money(r.cost_usd) + "<br>" + t("stop") + ": " + esc(r.stop_reason);
+        var isSel = sel.task === tk.id && sel.model === mm;
+        mx += "<td>" + dot + '<button type="button" class="cell ' + (r.passed ? "pass" : "fail") + (isSel ? " sel" : "") + '" data-t="' + esc(tk.id) + '" data-m="' + esc(mm) + '" data-tip="' + esc(tipTxt) + '"><svg><use href="#' + (r.passed ? "i-ok" : "i-x") + '"/></svg>' + esc(r.passed ? t("ok") : t("fail")) + "</button></td>";
+      });
+      mx += "</tr>";
+    });
+    document.getElementById("matrix").innerHTML = mx + "</tbody>";
+    document.querySelectorAll(".cell").forEach(function (b) {
+      b.onclick = function () { sel.task = b.getAttribute("data-t"); sel.model = b.getAttribute("data-m"); render(); document.getElementById("diffcard").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    });
+
+    var sT = document.getElementById("selTask"), sM = document.getElementById("selModel");
+    sT.innerHTML = D.tasks.map(function (tk) { return '<option value="' + esc(tk.id) + '"' + (tk.id === sel.task ? " selected" : "") + ">" + esc(short(tk.id) + " · " + tk.date.slice(0, 10)) + "</option>"; }).join("");
+    sM.innerHTML = D.models.map(function (mm) { return '<option value="' + esc(mm) + '"' + (mm === sel.model ? " selected" : "") + ">" + esc(mm) + "</option>"; }).join("");
+    sT.onchange = function () { sel.task = sT.value; render(); };
+    sM.onchange = function () { sel.model = sM.value; render(); };
+    renderDiff();
+
+    document.getElementById("foot").innerHTML = esc(t("genBy")) + " " + esc(D.meta.report_version || "") + ' · <a href="https://github.com/diegoperezg7/commitarena">github.com/diegoperezg7/commitarena</a>';
+  }
+
+  function diffHtml(text) {
+    if (!text) return '<div class="empty">' + esc(t("none")) + "</div>";
+    return text.split("\n").map(function (l) {
+      var c = "";
+      if (l.indexOf("diff --git") === 0 || l.indexOf("+++") === 0 || l.indexOf("---") === 0) c = "f";
+      else if (l.indexOf("@@") === 0) c = "h";
+      else if (l[0] === "+") c = "a";
+      else if (l[0] === "-") c = "d";
+      return '<span class="' + c + '">' + (esc(l) || " ") + "</span>";
+    }).join("");
+  }
+  function renderDiff() {
+    var tk = D.tasks.filter(function (x) { return x.id === sel.task; })[0];
+    var r = R[sel.task + "|" + sel.model];
+    document.getElementById("mname").textContent = sel.model || "";
+    document.getElementById("pModel").innerHTML = r ? diffHtml(r.patch) : '<div class="empty">' + esc(t("nores")) + "</div>";
+    document.getElementById("pGold").innerHTML = tk ? diffHtml(tk.gold) : "";
+    var cl = document.getElementById("clink");
+    if (tk && tk.url) { cl.href = tk.url; cl.textContent = tk.commit; } else { cl.removeAttribute("href"); cl.textContent = tk ? tk.commit : ""; }
+    document.getElementById("diffmeta").innerHTML = r ? ('<span class="cell ' + (r.passed ? "pass" : "fail") + '" style="cursor:default"><svg><use href="#' + (r.passed ? "i-ok" : "i-x") + '"/></svg>' + esc(r.passed ? t("ok") : t("fail")) + "</span>") : "";
+  }
+  render();
+})();
+</script>
+</body>
+</html>

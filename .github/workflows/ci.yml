@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Lint
+        run: uv run --frozen ruff check src tests && uv run --frozen ruff format --check src tests
+      - name: Unit tests (no Docker, no models)
+        run: uv run --frozen pytest -q -m "not docker"
+      - name: Docker integration tests (Linux only, scripted model, no network calls)
+        if: runner.os == 'Linux'
+        run: uv run --frozen pytest -q -m docker
+      - name: Demo works with zero config
+        run: uv run --frozen commitarena demo --no-open --out demo.html
