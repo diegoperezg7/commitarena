@@ -48,7 +48,7 @@ Tres cosas que commitarena hace a propósito:
 La demo no necesita claves ni Docker. Muestra una ejecución grabada y escribe el informe HTML.
 
 ```bash
-uvx --from git+https://github.com/diegoperezg7/commitarena@v0.1.1 commitarena demo
+uvx commitarena demo
 ```
 
 O desde un clon:
@@ -56,8 +56,6 @@ O desde un clon:
 ```bash
 git clone https://github.com/diegoperezg7/commitarena && cd commitarena && uv run commitarena demo
 ```
-
-`uvx commitarena` llegará pronto a PyPI.
 
 ## Ejemplo de salida
 

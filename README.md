@@ -47,7 +47,7 @@ Three things commitarena does on purpose:
 The demo needs no API keys and no Docker. It prints a recorded run and writes the HTML report.
 
 ```bash
-uvx --from git+https://github.com/diegoperezg7/commitarena@v0.1.1 commitarena demo
+uvx commitarena demo
 ```
 
 Or from a clone:
@@ -55,8 +55,6 @@ Or from a clone:
 ```bash
 git clone https://github.com/diegoperezg7/commitarena && cd commitarena && uv run commitarena demo
 ```
-
-`uvx commitarena` is coming to PyPI.
 
 ## Example output
 
