@@ -214,6 +214,16 @@ los diffs de los tests y los fixes originales como diffs, cada uno enlazado a su
 - Ejecución en paralelo
 - Exportar a Harbor
 
+## Parte de una serie
+
+Herramientas open source para medir agentes y LLMs con tus propios datos:
+
+- [memarena](https://github.com/diegoperezg7/memarena): Compara capas de memoria con tus propias conversaciones.
+- [parsearena](https://github.com/diegoperezg7/parsearena): Compara parsers de PDF lado a lado y su efecto en la recuperación.
+- [toolbloat](https://github.com/diegoperezg7/toolbloat): Mide el coste en tokens de tu pila MCP y los errores al elegir tool.
+- [rulelab](https://github.com/diegoperezg7/rulelab): Descubre qué reglas de tu AGENTS.md se ganan sus tokens.
+- [doesitfire](https://github.com/diegoperezg7/doesitfire): Comprueba si tu SKILL.md se activa en Claude Code, Codex y OpenCode.
+
 ## Licencia
 
 MIT. Ver [LICENSE](LICENSE).

@@ -212,6 +212,16 @@ diffs and the upstream fixes as diffs, each linked to its commit. The upstream l
 - Parallel runs
 - Export to Harbor
 
+## Part of a series
+
+Open source tools that evaluate agents and LLMs on your own data:
+
+- [memarena](https://github.com/diegoperezg7/memarena): Benchmark memory layers on your own conversations.
+- [parsearena](https://github.com/diegoperezg7/parsearena): Compare PDF parsers side by side and their effect on retrieval.
+- [toolbloat](https://github.com/diegoperezg7/toolbloat): Measure the token cost of your MCP stack and tool-choice errors.
+- [rulelab](https://github.com/diegoperezg7/rulelab): Find which AGENTS.md rules earn their tokens.
+- [doesitfire](https://github.com/diegoperezg7/doesitfire): Test whether your SKILL.md activates in Claude Code, Codex and OpenCode.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
